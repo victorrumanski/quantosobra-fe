@@ -60,7 +60,7 @@ function Layout({ children, month, setMonth }: any) {
       <header className="header" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ margin: 0 }}>Quanto Sobra?</h1>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>Gestão Simplificada</p>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>Tome o controle dos seus gastos mensais</p>
         </div>
         <div className="month-selector">
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} />
@@ -393,14 +393,6 @@ function Relatorios() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 'bold' }}>{formatCurrency(data.total)}</div>
-                  {limit > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: data.total > limit ? 'var(--danger)' : 'var(--success)' }}>
-                      Limite: {formatCurrency(limit)}
-                      <span style={{ marginLeft: '0.4rem', fontWeight: 'bold' }}>
-                        ({data.total > limit ? `gastou a mais ${formatCurrency(data.total - limit)}` : `economizou ${formatCurrency(limit - data.total)}`})
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -417,6 +409,14 @@ function Relatorios() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.2rem' }}>
                     <span>Uso do Limite ({limit > 0 ? ((data.total / limit) * 100).toFixed(1) : '100'}%)</span>
+                    {limit > 0 && (
+                      <span style={{ color: data.total > limit ? 'var(--danger)' : 'var(--success)' }}>
+                        Limite: {formatCurrency(limit)}
+                        <span style={{ marginLeft: '0.4rem', fontWeight: 'bold' }}>
+                          ({data.total > limit ? `gastou a mais ${formatCurrency(data.total - limit)}` : `economizou ${formatCurrency(limit - data.total)}`})
+                        </span>
+                      </span>
+                    )}
                   </div>
                   <div className="progress" style={{ height: '8px' }}>
                     <div
@@ -488,7 +488,7 @@ function Planejamento() {
     <>
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <p style={{ color: 'var(--muted)', margin: 0, maxWidth: '600px' }}>
-          Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>, 
+          Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>,
           você poderá ver o quanto economizou ou se ultrapassou o planejado.
         </p>
         <button className="btn" onClick={onSave} disabled={mutations.saveBudgets.isPending}>
