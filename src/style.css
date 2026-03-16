@@ -3,8 +3,13 @@
 }
 
 @keyframes flash-highlight {
-  0% { background-color: rgba(34, 197, 94, 0.2); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: rgba(34, 197, 94, 0.2);
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
 
 .row-highlight {
@@ -121,6 +126,12 @@ header.header {
   font-size: 0.85rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .month-selector input {
   padding: 0.4rem 0.8rem;
   border: 1px solid #e2e8f0;
@@ -128,6 +139,29 @@ header.header {
   font-family: inherit;
   color: var(--text);
   background: #f8fafc;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.user-profile:hover {
+  background: #f1f5f9;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.user-icon {
+  font-size: 1.1rem;
 }
 
 /* nav-container removed */

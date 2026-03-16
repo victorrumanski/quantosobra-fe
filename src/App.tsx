@@ -4,6 +4,22 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
 import { useFinanceData, TransactionType, type Transaction } from './lib/finance'
+import {
+  Settings,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  User,
+  ArrowUpDown,
+  BarChart3,
+  Target,
+  Plus,
+  LogOut,
+  CircleDollarSign,
+  BanknoteArrowDown,
+  BanknoteArrowUp
+} from 'lucide-react'
 
 // --- Context for state sharing ---
 const FinanceContext = React.createContext<{ session: any; month: string } | null>(null)
@@ -54,6 +70,7 @@ function Layout({ children, month, setMonth }: any) {
   const navigate = useNavigate()
   const location = useLocation()
   const activeTab = location.pathname
+  const { session } = useFinanceContext()
 
   return (
     <div className="container">
@@ -64,15 +81,34 @@ function Layout({ children, month, setMonth }: any) {
         </div>
 
         <nav className="nav-menu">
-          <button onClick={() => navigate({ to: '/' })} className={`nav-item ${activeTab === '/' ? 'active' : ''}`}>Gastos</button>
-          <button onClick={() => navigate({ to: '/receitas' })} className={`nav-item ${activeTab === '/receitas' ? 'active' : ''}`}>Receitas</button>
-          <button onClick={() => navigate({ to: '/relatorios' })} className={`nav-item ${activeTab === '/relatorios' ? 'active' : ''}`}>Relatórios</button>
-          <button onClick={() => navigate({ to: '/planejamento' })} className={`nav-item ${activeTab === '/planejamento' ? 'active' : ''}`}>Planejamento</button>
-          <button onClick={() => navigate({ to: '/config' })} className={`nav-item ${activeTab === '/config' ? 'active' : ''}`}>⚙️</button>
+          <button onClick={() => navigate({ to: '/' })} className={`nav-item ${activeTab === '/' ? 'active' : ''}`}>
+            <BanknoteArrowDown size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            Gastos
+          </button>
+          <button onClick={() => navigate({ to: '/receitas' })} className={`nav-item ${activeTab === '/receitas' ? 'active' : ''}`}>
+            <BanknoteArrowUp size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            Receitas
+          </button>
+          <button onClick={() => navigate({ to: '/relatorios' })} className={`nav-item ${activeTab === '/relatorios' ? 'active' : ''}`}>
+            <BarChart3 size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            Relatórios
+          </button>
+          <button onClick={() => navigate({ to: '/planejamento' })} className={`nav-item ${activeTab === '/planejamento' ? 'active' : ''}`}>
+            <Target size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            Planejamento
+          </button>
+          <button onClick={() => navigate({ to: '/config' })} className={`nav-item ${activeTab === '/config' ? 'active' : ''}`}>
+            <Settings size={18} style={{ verticalAlign: 'middle' }} />
+          </button>
         </nav>
 
-        <div className="month-selector">
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)} />
+        <div className="header-actions">
+          <div className="month-selector">
+            <input type="month" value={month} onChange={e => setMonth(e.target.value)} />
+          </div>
+          <div className="user-profile" title={session?.user?.email}>
+            <span className="user-icon"><User size={18} /></span>
+          </div>
         </div>
       </header>
 
@@ -155,7 +191,7 @@ function MeusGastos() {
     let res;
     if (editingId) res = await mutations.updateTx.mutateAsync({ id: editingId, payload })
     else res = await mutations.addTx.mutateAsync(payload)
-    
+
     if (res?.id) {
       setHighlightedId(res.id)
       setTimeout(() => setHighlightedId(null), 2000)
@@ -178,71 +214,80 @@ function MeusGastos() {
   }
 
   return (
-    <div className="layout-split">
-      <aside className="layout-sidebar">
-        <section className={`panel ${editingId ? 'editing' : ''}`}>
-          <h2 style={{ marginTop: 0 }}>{editingId ? 'Editar' : 'Novo Gasto'}</h2>
-          <form onSubmit={onSubmit} className="form-col">
-            <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-            <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-            <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-            <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-            <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
-            <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-              <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
-              {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
-            </div>
-          </form>
-        </section>
-      </aside>
+    <>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <p style={{ color: 'var(--muted)', margin: 0 }}>
+          Adicione todos os seus gastos para acompanhar como suas contas se comportam durante o mês
+        </p>
+      </div>
+      <div className="layout-split">
+        <aside className="layout-sidebar">
+          <section className={`panel ${editingId ? 'editing' : ''}`}>
+            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BanknoteArrowDown size={20} /> {editingId ? 'Editar Gasto' : 'Novo Gasto'}
+            </h2>
+            <form onSubmit={onSubmit} className="form-col">
+              <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+              <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+              <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+              <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+              <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+              <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
+                {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
+              </div>
+            </form>
+          </section>
+        </aside>
 
-      <main className="layout-main">
-        <section className="panel">
-          <nav className="tabs" style={{ marginBottom: '1.5rem' }}>
-            <button onClick={() => setActiveAccountTab('Todas')} className={activeAccountTab === 'Todas' ? 'active' : ''}>
-              Todas: {formatCurrency(totals.total)}
-            </button>
-            {accounts.map(acc => (
-              <button key={acc.id} onClick={() => setActiveAccountTab(acc.name)} className={activeAccountTab === acc.name ? 'active' : ''}>
-                {acc.name}: {formatCurrency(totals.byAccount[acc.name] || 0)}
+        <main className="layout-main">
+          <section className="panel">
+            <nav className="tabs" style={{ marginBottom: '1.5rem' }}>
+              <button onClick={() => setActiveAccountTab('Todas')} className={activeAccountTab === 'Todas' ? 'active' : ''}>
+                Todas as Contas: {formatCurrency(totals.total)}
               </button>
-            ))}
-          </nav>
+              {accounts.map(acc => (
+                <button key={acc.id} onClick={() => setActiveAccountTab(acc.name)} className={activeAccountTab === acc.name ? 'active' : ''}>
+                  {acc.name}: {formatCurrency(totals.byAccount[acc.name] || 0)}
+                </button>
+              ))}
+            </nav>
 
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data ↕️</th>
-                  <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto ↕️</th>
-                  <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria ↕️</th>
-                  <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor ↕️</th>
-                  <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.map(t => (
-                  <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                    <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                    <td>
-                      <strong>{t.description}</strong>
-                      {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
-                    </td>
-                    <td><span className="badge">{t.category}</span></td>
-                    <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
-                    <td className="col-actions" style={{ textAlign: 'right' }}>
-                      <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}>✏️</button>
-                      <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small">🗑️</button>
-                    </td>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data <ArrowUpDown size={14} /></th>
+                    <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
+                    <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
+                    <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
+                    <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-    </div>
+                </thead>
+                <tbody>
+                  {filteredData.map(t => (
+                    <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
+                      <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        <strong>{t.description}</strong>
+                        {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                      </td>
+                      <td><span className="badge">{t.category}</span></td>
+                      <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
+                      <td className="col-actions" style={{ textAlign: 'right' }}>
+                        <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}><Pencil size={14} /></button>
+                        <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small"><Trash2 size={14} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </>
   )
 }
 
@@ -306,68 +351,83 @@ function Receitas() {
   }
 
   return (
-    <div className="layout-split">
-      <aside className="layout-sidebar">
-        <section className={`panel ${editingId ? 'editing' : ''}`}>
-          <h2 style={{ marginTop: 0 }}>{editingId ? 'Editar Receita' : 'Nova Receita'}</h2>
-          <form onSubmit={onSubmit} className="form-col">
-            <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-            <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-            <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-            <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-            <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-              <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
-              {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
-            </div>
-          </form>
-        </section>
-      </aside>
+    <>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <p style={{ color: 'var(--muted)', margin: 0 }}>
+          Registre suas entradas como salários ou vendas para descobrir se vai sobrar dinheiro no fim do mês
+        </p>
+      </div>
+      <div className="layout-split">
+        <aside className="layout-sidebar">
+          <section className={`panel ${editingId ? 'editing' : ''}`}>
+            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BanknoteArrowUp size={20} /> {editingId ? 'Editar Receita' : 'Nova Receita'}
+            </h2>
+            <form onSubmit={onSubmit} className="form-col">
+              <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+              <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+              <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+              <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+              <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
+                {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
+              </div>
+            </form>
+          </section>
+        </aside>
 
-      <main className="layout-main">
-        <section className="panel">
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Nome</th>
-                  <th>Conta</th>
-                  <th style={{ textAlign: 'right' }}>Valor</th>
-                  <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map(t => (
-                  <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                    <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                    <td>
-                      <strong>{t.description}</strong>
-                      {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
-                    </td>
-                    <td><span className="badge">{t.account}</span></td>
-                    <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>{formatCurrency(t.amount)}</td>
-                    <td className="col-actions" style={{ textAlign: 'right' }}>
-                      <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}>✏️</button>
-                      <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small">🗑️</button>
-                    </td>
+        <main className="layout-main">
+          <section className="panel">
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Nome</th>
+                    <th>Conta</th>
+                    <th style={{ textAlign: 'right' }}>Valor</th>
+                    <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
-    </div>
+                </thead>
+                <tbody>
+                  {list.map(t => (
+                    <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
+                      <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        <strong>{t.description}</strong>
+                        {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                      </td>
+                      <td><span className="badge">{t.account}</span></td>
+                      <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>{formatCurrency(t.amount)}</td>
+                      <td className="col-actions" style={{ textAlign: 'right' }}>
+                        <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}><Pencil size={14} /></button>
+                        <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small"><Trash2 size={14} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </>
   )
 }
 
 function Relatorios() {
   const { session, month } = useFinanceContext()
-  const { categories, transactions, budgets } = useFinanceData(month, session?.user?.id)
+  const { accounts, categories, transactions, budgets } = useFinanceData(month, session?.user?.id)
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
+  const [accountFilter, setAccountFilter] = useState('Todas')
 
-  const monthDespesas = useMemo(() => transactions.filter(t => t.type === TransactionType.DESPESA), [transactions])
+  const filteredTxs = useMemo(() => {
+    if (accountFilter === 'Todas') return transactions
+    return transactions.filter(t => t.account === accountFilter)
+  }, [transactions, accountFilter])
+
+  const monthDespesas = useMemo(() => filteredTxs.filter(t => t.type === TransactionType.DESPESA), [filteredTxs])
   const totalReceita = useMemo(() => transactions.filter(t => t.type === TransactionType.RECEITA).reduce((a, b) => a + b.amount, 0), [transactions])
   const totalDespesa = useMemo(() => monthDespesas.reduce((a, b) => a + b.amount, 0), [monthDespesas])
 
@@ -383,21 +443,43 @@ function Relatorios() {
 
   return (
     <>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p style={{ color: 'var(--muted)' }}>
-          Aqui você descobre em qual categoria seu orçamento está estourando
-        </p>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <span style={{ color: 'var(--muted)' }}>
+          Aqui você descobre em qual categoria seu orçamento está estourando ou economizando
+        </span>
+        <select
+          className="btn small"
+          style={{
+            background: 'white',
+            color: 'var(--text)',
+            border: '1px solid var(--border)',
+            width: 'auto',
+            minWidth: '180px',
+            marginTop: 0
+          }}
+          value={accountFilter}
+          onChange={e => setAccountFilter(e.target.value)}
+        >
+          <option value="Todas">Todas as Contas</option>
+          {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+        </select>
       </div>
       <div className="summary">
-        <div className="card receita"><h3>Receita</h3><strong>{formatCurrency(totalReceita)}</strong></div>
-        <div className="card despesa"><h3>Despesa</h3><strong>{formatCurrency(totalDespesa)}</strong></div>
+        <div className="card receita">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BanknoteArrowUp size={16} /> Receita</h3>
+          <strong>{formatCurrency(totalReceita)}</strong>
+        </div>
+        <div className="card despesa">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BanknoteArrowDown size={16} /> Despesa</h3>
+          <strong>{formatCurrency(totalDespesa)}</strong>
+        </div>
         <div className="card saldo">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h3>Saldo</h3>
-            <span style={{ 
-              fontSize: '0.65rem', 
-              fontWeight: 'bold', 
-              textTransform: 'uppercase', 
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CircleDollarSign size={16} /> Saldo</h3>
+            <span style={{
+              fontSize: '0.65rem',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
               color: (totalReceita - totalDespesa) >= 0 ? 'var(--success)' : 'var(--danger)',
               background: (totalReceita - totalDespesa) >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
               padding: '0.2rem 0.5rem',
@@ -427,9 +509,8 @@ function Relatorios() {
                 style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                  <span style={{ display: 'flex' }}>{isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</span>
                   <strong>{cat}</strong>
-                  <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>({percentOfTotal}%)</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 'bold' }}>{formatCurrency(data.total)}</div>
@@ -471,9 +552,9 @@ function Relatorios() {
               </div>
 
               {isExpanded && (
-                <div style={{ marginTop: '1rem', paddingLeft: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ marginTop: '1rem', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
                   {data.txs.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)).map(t => (
-                    <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)' }}>
+                    <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
                       <div>
                         <span style={{ color: 'var(--muted)', marginRight: '0.5rem' }}>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                         <span>{t.description}</span>
@@ -588,10 +669,10 @@ function Configuracoes() {
         {accounts.map(a => (
           <div key={a.id} className="budget-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{a.name}</span>
-            <button onClick={() => del('accounts', a.id, a.name)} className="btn danger small">🗑️</button>
+            <button onClick={() => del('accounts', a.id, a.name)} className="btn danger small"><Trash2 size={14} /></button>
           </div>
         ))}
-        <button onClick={() => add('accounts')} className="btn">Adicionar Conta</button>
+        <button onClick={() => add('accounts')} className="btn"><Plus size={16} /> Adicionar Conta</button>
       </div>
 
       <h3>Categorias</h3>
@@ -599,14 +680,16 @@ function Configuracoes() {
         {categories.map(c => (
           <div key={c.id} className="budget-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{c.name}</span>
-            <button onClick={() => del('categories', c.id, c.name)} className="btn danger small">🗑️</button>
+            <button onClick={() => del('categories', c.id, c.name)} className="btn danger small"><Trash2 size={14} /></button>
           </div>
         ))}
-        <button onClick={() => add('categories')} className="btn">Adicionar Categoria</button>
+        <button onClick={() => add('categories')} className="btn"><Plus size={16} /> Adicionar Categoria</button>
       </div>
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-        <button onClick={() => { supabase.auth.signOut(); window.location.reload() }} className="btn danger">Sair da Conta</button>
+        <button onClick={() => { supabase.auth.signOut(); window.location.reload() }} className="btn danger">
+          <LogOut size={16} /> Sair da Conta
+        </button>
       </div>
     </div>
   )
