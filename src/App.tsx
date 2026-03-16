@@ -461,7 +461,8 @@ function Relatorios() {
             border: '1px solid var(--border)',
             width: 'auto',
             minWidth: '180px',
-            marginTop: 0
+            marginTop: 0,
+            height: 'auto'
           }}
           value={accountFilter}
           onChange={e => setAccountFilter(e.target.value)}
@@ -693,7 +694,7 @@ function Configuracoes() {
       </div>
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-        <button onClick={() => { supabase.auth.signOut(); window.location.reload() }} className="btn danger">
+        <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }} className="btn danger">
           <LogOut size={16} /> Sair da Conta
         </button>
       </div>
