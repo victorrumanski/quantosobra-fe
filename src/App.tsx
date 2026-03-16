@@ -18,7 +18,8 @@ import {
   LogOut,
   CircleDollarSign,
   BanknoteArrowDown,
-  BanknoteArrowUp
+  BanknoteArrowUp,
+  PiggyBank
 } from 'lucide-react'
 
 // --- Context for state sharing ---
@@ -75,9 +76,14 @@ function Layout({ children, month, setMonth }: any) {
   return (
     <div className="container">
       <header className="header">
-        <div className="header-logo">
-          <h1>Quanto Sobra?</h1>
-          <p>Tome o controle dos seus gastos mensais</p>
+        <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <div style={{ background: 'var(--primary)', color: 'white', padding: '0.5rem', borderRadius: '0.75rem', display: 'flex' }}>
+            <PiggyBank size={24} />
+          </div>
+          <div>
+            <h1 style={{ marginBottom: '2px' }}>Quanto Sobra?</h1>
+            <p>Tome o controle dos seus gastos mensais</p>
+          </div>
         </div>
 
         <nav className="nav-menu">
