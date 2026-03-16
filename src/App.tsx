@@ -51,18 +51,64 @@ function Auth() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '1rem' }}>
-      <main className="panel" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-        <h1 style={{ color: 'var(--primary)', textAlign: 'center', marginBottom: '2rem' }}>Quanto Sobra?</h1>
+    <div className="auth-screen">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div style={{ background: 'var(--primary)', color: 'white', padding: '0.8rem', borderRadius: '1rem', marginBottom: '1.2rem', display: 'flex' }}>
+            <PiggyBank size={42} />
+          </div>
+          <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Quanto Sobra?</h1>
+          <p style={{ color: 'var(--muted)', marginTop: '0.5rem', fontSize: '0.95rem' }}>
+            Tome o controle do seu dinheiro para sobrar mais no final do mês
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="form-col">
-          <label>Email <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></label>
-          <label>Senha <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required /></label>
-          <button type="submit" className="btn" disabled={loading}>{loading ? 'Carregando...' : mode === 'login' ? 'Entrar' : 'Cadastrar'}</button>
+          <label>Email
+            <input
+              type="email"
+              placeholder="seu@email.com"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              required
+            />
+          </label>
+          <label>Senha
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              required
+            />
+          </label>
+          <button type="submit" className="btn" style={{ width: '100%', height: '48px', fontSize: '1rem' }} disabled={loading}>
+            {loading ? 'Processando...' : mode === 'login' ? 'Entrar no sistema' : 'Criar minha conta'}
+          </button>
         </form>
-        <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} style={{ marginTop: '1rem', background: 'none', border: 'none', color: 'var(--primary)', width: '100%' }}>
-          {mode === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Login'}
+
+        <button
+          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+          style={{ marginTop: '1.2rem', background: 'none', border: 'none', color: 'var(--primary)', width: '100%', cursor: 'pointer', fontWeight: 600 }}
+        >
+          {mode === 'login' ? 'Ainda não tem uma conta? Cadastre-se' : 'Já possui uma conta? Faça o login'}
         </button>
-      </main>
+
+        <div className="auth-features">
+          <div className="feature-item">
+            <BarChart3 size={18} className="text-primary" />
+            <span>Relatórios visuais de gastos e lucros</span>
+          </div>
+          <div className="feature-item">
+            <Target size={18} className="text-primary" />
+            <span>Planejamento por categoria de custo</span>
+          </div>
+          <div className="feature-item">
+            <CircleDollarSign size={18} className="text-primary" />
+            <span>Controle total do seu saldo mensal</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

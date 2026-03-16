@@ -27,6 +27,11 @@
   --danger: #ef4444;
 }
 
+.text-primary {
+  color: var(--primary);
+}
+
+
 body {
   margin: 0;
   font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -647,4 +652,48 @@ footer {
 
 .text-right {
   text-align: right;
+}
+
+/* Auth Styles */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  padding: 1rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 3.5rem 2.5rem;
+  background: white;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  text-align: center;
+}
+
+.auth-features {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px dashed var(--border);
+}
+
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
