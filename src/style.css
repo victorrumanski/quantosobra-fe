@@ -2,6 +2,15 @@
   box-sizing: border-box;
 }
 
+@keyframes flash-highlight {
+  0% { background-color: rgba(34, 197, 94, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.row-highlight {
+  animation: flash-highlight 2s ease-out forwards;
+}
+
 :root {
   --background: #f5f7fb;
   --panel: #ffffff;
@@ -81,83 +90,144 @@ body {
   margin-top: 0.25rem;
 }
 
-header {
-  margin: 0;
+header.header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: white;
+  align-items: center;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 2rem;
+@media (min-width: 1024px) {
+  header.header {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 2rem;
+  }
 }
 
-header p {
-  margin: 0.3rem 0 0;
+.header-logo h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.header-logo p {
+  margin: 0;
   color: var(--muted);
+  font-size: 0.85rem;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 2rem;
+.month-selector input {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-family: inherit;
+  color: var(--text);
+  background: #f8fafc;
 }
 
-header p {
-  margin: 0.3rem 0 0;
-  color: var(--muted);
+/* nav-container removed */
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem;
+  border-radius: 1rem;
+  gap: 0.2rem;
+  width: 100%;
 }
 
+@media (min-width: 1024px) {
+  .nav-menu {
+    flex-direction: row;
+    border-radius: 999px;
+    width: auto;
+    gap: 0.1rem;
+  }
+}
+
+.nav-menu::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-item {
+  border: none;
+  background: transparent;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.8rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .nav-item {
+    width: auto;
+    border-radius: 999px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+.nav-item:hover {
+  color: var(--primary);
+  background: #f1f5f9;
+}
+
+.nav-item.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+/* Inner page tabs (segmented control style) */
 .tabs {
   display: flex;
-  flex-wrap: nowrap;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  gap: 0.25rem;
   overflow-x: auto;
-  overflow-y: hidden;
-  gap: 0;
-  border-bottom: 1px solid #cbd5e1;
-  -ms-overflow-style: none;
-  /* IE 10+ */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 .tabs::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  display: none;
 }
 
 .tabs button {
-  border: 1px solid #cbd5e1;
-  border-bottom: 1px solid transparent;
-  background: #f8fafc;
-  color: var(--text);
-  padding: 0.7rem 0.95rem;
-  border-top-left-radius: 0.6rem;
-  border-top-right-radius: 0.6rem;
-  border-right: none;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
   font-weight: 600;
+  font-size: 0.85rem;
+  color: #64748b;
   cursor: pointer;
   white-space: nowrap;
-  flex: 0 0 auto;
-  position: relative;
-  top: 1px;
-}
-
-.tabs button:last-child {
-  border-right: 1px solid #cbd5e1;
-}
-
-.tabs button.active {
-  background: #e0e7ff;
-  color: #1d4ed8;
-  border-color: #1d4ed8;
-  border-bottom-color: #e0e7ff;
-  box-shadow: 0 2px 0 0 #1d4ed8;
-  font-weight: 700;
-  z-index: 2;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: max-content;
 }
 
 .tabs button:hover {
-  background: #e0e7ff;
-  color: #1d4ed8;
-  border-color: #1d4ed8;
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.tabs button.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .summary {
@@ -182,6 +252,8 @@ header p {
 
 .card strong {
   font-size: 1.4rem;
+  display: block;
+  text-align: right;
 }
 
 .card.receita strong {
@@ -192,9 +264,7 @@ header p {
   color: var(--danger);
 }
 
-.card.saldo strong {
-  color: var(--primary);
-}
+/* Dynamic color handled in JS */
 
 .card.vermelho strong {
   color: var(--danger);

@@ -56,23 +56,26 @@ function Layout({ children, month, setMonth }: any) {
   const activeTab = location.pathname
 
   return (
-    <div className="container" style={{ padding: '0' }}>
-      <header className="header" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Quanto Sobra?</h1>
-          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>Tome o controle dos seus gastos mensais</p>
+    <div className="container">
+      <header className="header">
+        <div className="header-logo">
+          <h1>Quanto Sobra?</h1>
+          <p>Tome o controle dos seus gastos mensais</p>
         </div>
+
+        <nav className="nav-menu">
+          <button onClick={() => navigate({ to: '/' })} className={`nav-item ${activeTab === '/' ? 'active' : ''}`}>Gastos</button>
+          <button onClick={() => navigate({ to: '/receitas' })} className={`nav-item ${activeTab === '/receitas' ? 'active' : ''}`}>Receitas</button>
+          <button onClick={() => navigate({ to: '/relatorios' })} className={`nav-item ${activeTab === '/relatorios' ? 'active' : ''}`}>Relatórios</button>
+          <button onClick={() => navigate({ to: '/planejamento' })} className={`nav-item ${activeTab === '/planejamento' ? 'active' : ''}`}>Planejamento</button>
+          <button onClick={() => navigate({ to: '/config' })} className={`nav-item ${activeTab === '/config' ? 'active' : ''}`}>⚙️</button>
+        </nav>
+
         <div className="month-selector">
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} />
         </div>
       </header>
-      <nav className="tabs" style={{ padding: '0 1.5rem' }}>
-        <button onClick={() => navigate({ to: '/' })} className={activeTab === '/' ? 'active' : ''}>Gastos</button>
-        <button onClick={() => navigate({ to: '/receitas' })} className={activeTab === '/receitas' ? 'active' : ''}>Receitas</button>
-        <button onClick={() => navigate({ to: '/relatorios' })} className={activeTab === '/relatorios' ? 'active' : ''}>Relatórios</button>
-        <button onClick={() => navigate({ to: '/planejamento' })} className={activeTab === '/planejamento' ? 'active' : ''}>Planejamento</button>
-        <button onClick={() => navigate({ to: '/config' })} className={activeTab === '/config' ? 'active' : ''}>⚙️</button>
-      </nav>
+
       <main style={{ padding: '1.5rem' }}>{children}</main>
     </div>
   )
@@ -84,6 +87,7 @@ function MeusGastos() {
   const { accounts, categories, transactions, mutations } = useFinanceData(month, session?.user?.id)
   const [activeAccountTab, setActiveAccountTab] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>({ key: 'transaction_date', direction: 'desc' })
 
   const [form, setForm] = useState({
@@ -148,8 +152,14 @@ function MeusGastos() {
       account_id: accounts.find(a => a.name === form.acc)?.id,
       category_id: categories.find(c => c.name === form.cat)?.id,
     }
-    if (editingId) await mutations.updateTx.mutateAsync({ id: editingId, payload })
-    else await mutations.addTx.mutateAsync(payload)
+    let res;
+    if (editingId) res = await mutations.updateTx.mutateAsync({ id: editingId, payload })
+    else res = await mutations.addTx.mutateAsync(payload)
+    
+    if (res?.id) {
+      setHighlightedId(res.id)
+      setTimeout(() => setHighlightedId(null), 2000)
+    }
     setEditingId(null)
     setForm({ ...form, desc: '', details: '', amt: '' })
   }
@@ -213,7 +223,7 @@ function MeusGastos() {
               </thead>
               <tbody>
                 {filteredData.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
                     <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
                     <td>
                       <strong>{t.description}</strong>
@@ -240,6 +250,7 @@ function Receitas() {
   const { session, month } = useFinanceContext()
   const { accounts, transactions, mutations } = useFinanceData(month, session?.user?.id)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
 
   const list = useMemo(() => transactions.filter(t => t.type === TransactionType.RECEITA).sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)), [transactions, month])
 
@@ -269,8 +280,14 @@ function Receitas() {
       account_id: accId
     }
 
-    if (editingId) await mutations.updateTx.mutateAsync({ id: editingId, payload })
-    else await mutations.addTx.mutateAsync(payload)
+    let res;
+    if (editingId) res = await mutations.updateTx.mutateAsync({ id: editingId, payload })
+    else res = await mutations.addTx.mutateAsync(payload)
+
+    if (res?.id) {
+      setHighlightedId(res.id)
+      setTimeout(() => setHighlightedId(null), 2000)
+    }
 
     setEditingId(null)
     setForm({ ...form, desc: '', amt: '', details: '' })
@@ -322,7 +339,7 @@ function Receitas() {
               </thead>
               <tbody>
                 {list.map(t => (
-                  <tr key={t.id}>
+                  <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
                     <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
                     <td>
                       <strong>{t.description}</strong>
@@ -366,10 +383,33 @@ function Relatorios() {
 
   return (
     <>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <p style={{ color: 'var(--muted)' }}>
+          Aqui você descobre em qual categoria seu orçamento está estourando
+        </p>
+      </div>
       <div className="summary">
         <div className="card receita"><h3>Receita</h3><strong>{formatCurrency(totalReceita)}</strong></div>
         <div className="card despesa"><h3>Despesa</h3><strong>{formatCurrency(totalDespesa)}</strong></div>
-        <div className="card saldo"><h3>Saldo</h3><strong>{formatCurrency(totalReceita - totalDespesa)}</strong></div>
+        <div className="card saldo">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <h3>Saldo</h3>
+            <span style={{ 
+              fontSize: '0.65rem', 
+              fontWeight: 'bold', 
+              textTransform: 'uppercase', 
+              color: (totalReceita - totalDespesa) >= 0 ? 'var(--success)' : 'var(--danger)',
+              background: (totalReceita - totalDespesa) >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+              padding: '0.2rem 0.5rem',
+              borderRadius: '999px'
+            }}>
+              {(totalReceita - totalDespesa) >= 0 ? 'economizou' : 'gastou a mais'}
+            </span>
+          </div>
+          <strong style={{ color: (totalReceita - totalDespesa) >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            {formatCurrency(totalReceita - totalDespesa)}
+          </strong>
+        </div>
       </div>
 
       <div className="panel" style={{ marginTop: '1.5rem' }}>
