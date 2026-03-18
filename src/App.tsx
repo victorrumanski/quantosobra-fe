@@ -19,7 +19,8 @@ import {
   CircleDollarSign,
   BanknoteArrowDown,
   BanknoteArrowUp,
-  PiggyBank
+  PiggyBank,
+  X
 } from 'lucide-react'
 
 // --- Context for state sharing ---
@@ -59,7 +60,7 @@ function Auth() {
           </div>
           <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Quanto Sobra?</h1>
           <p style={{ color: 'var(--muted)', marginTop: '0.5rem', fontSize: '0.95rem' }}>
-            Tome o controle do seu dinheiro para sobrar mais no final do mês
+            Controle seus gastos para sobrar mais no fim do mês
           </p>
         </div>
 
@@ -128,7 +129,7 @@ function Layout({ children, month, setMonth }: any) {
           </div>
           <div>
             <h1 style={{ marginBottom: '2px' }}>Quanto Sobra?</h1>
-            <p>Tome o controle dos seus gastos mensais</p>
+            <p>Controle seus gastos mensais</p>
           </div>
         </div>
 
@@ -176,6 +177,7 @@ function MeusGastos() {
   const [activeAccountTab, setActiveAccountTab] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>({ key: 'transaction_date', direction: 'desc' })
 
   const [form, setForm] = useState({
@@ -248,8 +250,7 @@ function MeusGastos() {
       setHighlightedId(res.id)
       setTimeout(() => setHighlightedId(null), 2000)
     }
-    setEditingId(null)
-    setForm({ ...form, desc: '', details: '', amt: '' })
+    closeModal()
   }
 
   const onEdit = (t: Transaction) => {
@@ -260,96 +261,154 @@ function MeusGastos() {
       details: t.details || '',
       cat: t.category,
       acc: t.account,
-      amt: t.amount.toString().replace('.', ','),
+      amt: Math.abs(t.amount).toString().replace('.', ','),
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setIsModalOpen(true)
+  }
+
+  const onAdd = () => {
+    setEditingId(null)
+    setForm({
+      ...form,
+      day: new Date().getDate().toString().padStart(2, '0'),
+      desc: '',
+      details: '',
+      amt: '',
+    })
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingId(null)
+  }
+
+  const handleDelete = async () => {
+    if (editingId && confirm('Excluir este gasto?')) {
+      await mutations.deleteTx.mutateAsync(editingId)
+      closeModal()
+    }
   }
 
   return (
     <>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p style={{ color: 'var(--muted)', margin: 0 }}>
-          Adicione todos os seus gastos para acompanhar como suas contas se comportam durante o mês
+      <div className="mobile-view-header">
+        <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>
+          Gerencie seus gastos mensais
         </p>
+        <button onClick={onAdd} className="btn-primary-large">
+          <Plus size={20} /> Novo Gasto
+        </button>
       </div>
-      <div className="layout-split">
-        <aside className="layout-sidebar">
-          <section className={`panel ${editingId ? 'editing' : ''}`}>
-            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BanknoteArrowDown size={20} /> {editingId ? 'Editar Gasto' : 'Novo Gasto'}
-            </h2>
-            <form onSubmit={onSubmit} className="form-col">
-              <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-              <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-              <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-              <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-              <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
-              <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
-                {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
-              </div>
-            </form>
-          </section>
-        </aside>
 
-        <main className="layout-main">
-          <section className="panel">
-            <nav className="tabs" style={{ marginBottom: '1.5rem' }}>
-              <button onClick={() => setActiveAccountTab('Todas')} className={activeAccountTab === 'Todas' ? 'active' : ''}>
-                Todas as Contas: {formatCurrency(totals.total)}
-              </button>
-              {accounts.map(acc => (
-                <button key={acc.id} onClick={() => setActiveAccountTab(acc.name)} className={activeAccountTab === acc.name ? 'active' : ''}>
-                  {acc.name}: {formatCurrency(totals.byAccount[acc.name] || 0)}
-                </button>
+      <section className="panel">
+        <div className="account-filter-row" style={{ marginBottom: '1.5rem' }}>
+          <span className="account-filter-label">Total de gastos: {formatCurrency(totals.total)}</span>
+          <select
+            className="account-filter-select"
+            value={activeAccountTab}
+            onChange={e => setActiveAccountTab(e.target.value)}
+          >
+            <option value="Todas">Todas as Contas</option>
+            {accounts.map(acc => (
+              <option key={acc.id} value={acc.name}>
+                {acc.name} ({formatCurrency(totals.byAccount[acc.name] || 0)})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
+                <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map(t => (
+                <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
+                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                  <td>
+                    <strong>{t.description}</strong>
+                    {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                  </td>
+                  <td><span className="badge">{t.category}</span></td>
+                  <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
+                  <td className="col-actions" style={{ textAlign: 'right' }}>
+                    <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
+                  </td>
+                </tr>
               ))}
-            </nav>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data <ArrowUpDown size={14} /></th>
-                    <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
-                    <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
-                    <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
-                    <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.map(t => (
-                    <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                      <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                      <td>
-                        <strong>{t.description}</strong>
-                        {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
-                      </td>
-                      <td><span className="badge">{t.category}</span></td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
-                      <td className="col-actions" style={{ textAlign: 'right' }}>
-                        <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}><Pencil size={14} /></button>
-                        <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small"><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingId ? 'Editar Gasto' : 'Novo Gasto'}</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                <X size={24} />
+              </button>
             </div>
-          </section>
-        </main>
-      </div>
+            <div className="modal-body">
+              <form onSubmit={onSubmit} className="form-col">
+                <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+                <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+                <label>Nome <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+                <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+                <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+                <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
+                  {editingId && (
+                    <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
 
+
 function Receitas() {
   const { session, month } = useFinanceContext()
   const { accounts, transactions, mutations } = useFinanceData(month, session?.user?.id)
+  const [activeAccountFilter, setActiveAccountFilter] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const list = useMemo(() => transactions.filter(t => t.type === TransactionType.RECEITA).sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)), [transactions, month])
+  const totals = useMemo(() => {
+    const list = transactions.filter(t => t.type === TransactionType.RECEITA)
+    const accTotals: Record<string, number> = {}
+    list.forEach(t => accTotals[t.account] = (accTotals[t.account] || 0) + t.amount)
+    return {
+      total: list.reduce((a, b) => a + b.amount, 0),
+      byAccount: accTotals
+    }
+  }, [transactions, month])
+
+  const list = useMemo(() => {
+    let result = transactions.filter(t => t.type === TransactionType.RECEITA)
+    if (activeAccountFilter !== 'Todas') {
+      result = result.filter(t => t.account === activeAccountFilter)
+    }
+    return result.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date))
+  }, [transactions, month, activeAccountFilter])
 
   const [form, setForm] = useState({
     day: new Date().getDate().toString().padStart(2, '0'),
@@ -386,8 +445,7 @@ function Receitas() {
       setTimeout(() => setHighlightedId(null), 2000)
     }
 
-    setEditingId(null)
-    setForm({ ...form, desc: '', amt: '', details: '' })
+    closeModal()
   }
 
   const onEdit = (t: Transaction) => {
@@ -399,71 +457,121 @@ function Receitas() {
       acc: t.account,
       amt: t.amount.toString().replace('.', ','),
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setIsModalOpen(true)
+  }
+
+  const onAdd = () => {
+    setEditingId(null)
+    setForm({
+      ...form,
+      day: new Date().getDate().toString().padStart(2, '0'),
+      desc: '',
+      amt: '',
+      details: ''
+    })
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingId(null)
+  }
+
+  const handleDelete = async () => {
+    if (editingId && confirm('Excluir esta receita?')) {
+      await mutations.deleteTx.mutateAsync(editingId)
+      closeModal()
+    }
   }
 
   return (
     <>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <p style={{ color: 'var(--muted)', margin: 0 }}>
-          Registre suas entradas como salários ou vendas para descobrir se vai sobrar dinheiro no fim do mês
+      <div className="mobile-view-header">
+        <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>
+          Registre suas entradas e acompanhe o crescimento do seu saldo
         </p>
+        <button onClick={onAdd} className="btn-primary-large">
+          <Plus size={20} /> Nova Receita
+        </button>
       </div>
-      <div className="layout-split">
-        <aside className="layout-sidebar">
-          <section className={`panel ${editingId ? 'editing' : ''}`}>
-            <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BanknoteArrowUp size={20} /> {editingId ? 'Editar Receita' : 'Nova Receita'}
-            </h2>
-            <form onSubmit={onSubmit} className="form-col">
-              <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-              <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-              <label>Nome <input type="text" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-              <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-              <label>Detalhes <input type="text" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                <button type="submit" className="btn" style={{ flex: 1 }}>{editingId ? 'Salvar' : 'Adicionar'}</button>
-                {editingId && <button type="button" onClick={() => setEditingId(null)} className="btn danger">Cancelar</button>}
-              </div>
-            </form>
-          </section>
-        </aside>
 
-        <main className="layout-main">
-          <section className="panel">
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Nome</th>
-                    <th>Conta</th>
-                    <th style={{ textAlign: 'right' }}>Valor</th>
-                    <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map(t => (
-                    <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                      <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                      <td>
-                        <strong>{t.description}</strong>
-                        {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
-                      </td>
-                      <td><span className="badge">{t.account}</span></td>
-                      <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>{formatCurrency(t.amount)}</td>
-                      <td className="col-actions" style={{ textAlign: 'right' }}>
-                        <button onClick={() => onEdit(t)} className="btn small" style={{ marginRight: '0.3rem' }}><Pencil size={14} /></button>
-                        <button onClick={() => mutations.deleteTx.mutate(t.id)} className="btn danger small"><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <section className="panel">
+        <div className="account-filter-row" style={{ marginBottom: '1.5rem' }}>
+          <span className="account-filter-label">Total de receitas: {formatCurrency(totals.total)}</span>
+          <select
+            className="account-filter-select"
+            value={activeAccountFilter}
+            onChange={e => setActiveAccountFilter(e.target.value)}
+          >
+            <option value="Todas">Todas as Contas</option>
+            {accounts.map(a => (
+              <option key={a.id} value={a.name}>
+                {a.name} ({formatCurrency(totals.byAccount[a.name] || 0)})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>Conta</th>
+                <th style={{ textAlign: 'right' }}>Valor</th>
+                <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(t => (
+                <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
+                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                  <td>
+                    <strong>{t.description}</strong>
+                    {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                  </td>
+                  <td><span className="badge">{t.account}</span></td>
+                  <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>{formatCurrency(t.amount)}</td>
+                  <td className="col-actions" style={{ textAlign: 'right' }}>
+                    <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingId ? 'Editar Receita' : 'Nova Receita'}</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                <X size={24} />
+              </button>
             </div>
-          </section>
-        </main>
-      </div>
+            <div className="modal-body">
+              <form onSubmit={onSubmit} className="form-col">
+                <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+                <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+                <label>Nome <input type="text" placeholder="Ex: Salário, Venda, etc" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+                <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+                <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Receita'}</button>
+                  {editingId && (
+                    <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -500,16 +608,7 @@ function Relatorios() {
           Aqui você descobre em qual categoria seu orçamento está estourando ou economizando
         </span>
         <select
-          className="btn small"
-          style={{
-            background: 'white',
-            color: 'var(--text)',
-            border: '1px solid var(--border)',
-            width: 'auto',
-            minWidth: '180px',
-            marginTop: 0,
-            height: 'auto'
-          }}
+          className="account-filter-select"
           value={accountFilter}
           onChange={e => setAccountFilter(e.target.value)}
         >
@@ -665,7 +764,7 @@ function Planejamento() {
           Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>,
           você poderá ver o quanto economizou ou se ultrapassou o planejado.
         </p>
-        <button className="btn" onClick={onSave} disabled={mutations.saveBudgets.isPending}>
+        <button className="btn-primary-large" onClick={onSave} disabled={mutations.saveBudgets.isPending}>
           {mutations.saveBudgets.isPending ? 'Salvando...' : 'Salvar Planejamento'}
         </button>
       </div>
@@ -725,7 +824,7 @@ function Configuracoes() {
             <button onClick={() => del('accounts', a.id, a.name)} className="btn danger small"><Trash2 size={14} /></button>
           </div>
         ))}
-        <button onClick={() => add('accounts')} className="btn"><Plus size={16} /> Adicionar Conta</button>
+        <button onClick={() => add('accounts')} className="btn-primary-large"><Plus size={16} /> Adicionar Conta</button>
       </div>
 
       <h3>Categorias</h3>
@@ -736,7 +835,7 @@ function Configuracoes() {
             <button onClick={() => del('categories', c.id, c.name)} className="btn danger small"><Trash2 size={14} /></button>
           </div>
         ))}
-        <button onClick={() => add('categories')} className="btn"><Plus size={16} /> Adicionar Categoria</button>
+        <button onClick={() => add('categories')} className="btn-primary-large"><Plus size={16} /> Adicionar Categoria</button>
       </div>
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
