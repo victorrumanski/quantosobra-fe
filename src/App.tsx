@@ -229,7 +229,7 @@ function MeusGastos() {
     }))
   }
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent, keepOpen = false) => {
     e.preventDefault()
     const val = Number(form.amt.replace(',', '.'))
     if (!val) return
@@ -250,7 +250,11 @@ function MeusGastos() {
       setHighlightedId(res.id)
       setTimeout(() => setHighlightedId(null), 2000)
     }
-    closeModal()
+    if (keepOpen) {
+      setForm(f => ({ ...f, desc: '', details: '', amt: '' }))
+    } else {
+      closeModal()
+    }
   }
 
   const onEdit = (t: Transaction) => {
@@ -368,6 +372,9 @@ function MeusGastos() {
                 <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
                   <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
+                  {!editingId && (
+                    <button type="button" className="btn" style={{ flex: 1, height: '44px', marginTop: 0, background: 'var(--success)' }} onClick={e => onSubmit(e as any, true)}>Confirmar +1</button>
+                  )}
                   {editingId && (
                     <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
                       <Trash2 size={18} />
