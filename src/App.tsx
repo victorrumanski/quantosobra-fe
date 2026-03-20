@@ -3,7 +3,7 @@ import { createRootRoute, createRoute, createRouter, Outlet, useNavigate, useLoc
 import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
-import { useFinanceData, TransactionType, type Transaction } from './lib/finance'
+import { useFinanceData, TransactionType, type Transaction, type Account, type Category } from './lib/finance'
 import {
   Settings,
   Pencil,
