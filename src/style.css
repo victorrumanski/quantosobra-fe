@@ -45,9 +45,23 @@ body {
   padding: 0 0.8rem;
 }
 
+.main-content {
+  padding: 1.5rem;
+}
+
 @media (max-width: 1024px) {
   #app {
     max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  #app {
+    padding: 0;
+  }
+
+  .main-content {
+    padding: 0.75rem 0.15rem;
   }
 }
 
@@ -541,6 +555,7 @@ select {
   .mobile-view-header {
     flex-direction: column;
     align-items: stretch;
+    padding: 0 0.4rem;
   }
 
   .btn-primary-large {

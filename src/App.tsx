@@ -165,7 +165,76 @@ function Layout({ children, month, setMonth }: any) {
         </div>
       </header>
 
-      <main style={{ padding: '1.5rem' }}>{children}</main>
+      <main className="main-content">{children}</main>
+    </div>
+  )
+}
+
+type GastoFormState = {
+  day: string
+  desc: string
+  details: string
+  cat: string
+  acc: string
+  amt: string
+}
+
+function GastoModal({
+  isOpen,
+  editingId,
+  form,
+  setForm,
+  accounts,
+  categories,
+  onSubmit,
+  onClose,
+  onDelete,
+  allowConfirmPlusOne = false,
+}: {
+  isOpen: boolean
+  editingId: string | null
+  form: GastoFormState
+  setForm: (next: GastoFormState) => void
+  accounts: Account[]
+  categories: Category[]
+  onSubmit: (e: React.FormEvent, keepOpen?: boolean) => void | Promise<void>
+  onClose: () => void
+  onDelete?: () => void | Promise<void>
+  allowConfirmPlusOne?: boolean
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{editingId ? 'Editar Gasto' : 'Novo Gasto'}</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+            <X size={24} />
+          </button>
+        </div>
+        <div className="modal-body">
+          <form onSubmit={onSubmit} className="form-col">
+            <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+            <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+            <label>Nome <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+            <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+            <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+            <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
+              {!editingId && allowConfirmPlusOne && (
+                <button type="button" className="btn" style={{ flex: 1, height: '44px', marginTop: 0, background: 'var(--success)' }} onClick={e => onSubmit(e as any, true)}>Confirmar +1</button>
+              )}
+              {editingId && onDelete && (
+                <button type="button" onClick={onDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
+                  <Trash2 size={18} />
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
@@ -353,39 +422,18 @@ function MeusGastos() {
         </div>
       </section>
 
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingId ? 'Editar Gasto' : 'Novo Gasto'}</h2>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
-                <X size={24} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={onSubmit} className="form-col">
-                <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-                <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-                <label>Nome <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-                <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-                <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
-                <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
-                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
-                  {!editingId && (
-                    <button type="button" className="btn" style={{ flex: 1, height: '44px', marginTop: 0, background: 'var(--success)' }} onClick={e => onSubmit(e as any, true)}>Confirmar +1</button>
-                  )}
-                  {editingId && (
-                    <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <GastoModal
+        isOpen={isModalOpen}
+        editingId={editingId}
+        form={form}
+        setForm={setForm}
+        accounts={accounts}
+        categories={categories}
+        onSubmit={onSubmit}
+        onClose={closeModal}
+        onDelete={handleDelete}
+        allowConfirmPlusOne
+      />
     </>
   )
 }
@@ -585,9 +633,19 @@ function Receitas() {
 
 function Relatorios() {
   const { session, month } = useFinanceContext()
-  const { accounts, categories, transactions, budgets } = useFinanceData(month, session?.user?.id)
+  const { accounts, categories, transactions, budgets, mutations } = useFinanceData(month, session?.user?.id)
   const [expandedCat, setExpandedCat] = useState<string | null>(null)
   const [accountFilter, setAccountFilter] = useState('Todas')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [form, setForm] = useState<GastoFormState>({
+    day: new Date().getDate().toString().padStart(2, '0'),
+    desc: '',
+    details: '',
+    cat: '',
+    acc: '',
+    amt: '',
+  })
 
   const filteredTxs = useMemo(() => {
     if (accountFilter === 'Todas') return transactions
@@ -608,9 +666,60 @@ function Relatorios() {
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total)
   }, [monthDespesas])
 
+  useEffect(() => {
+    if (accounts[0] && !form.acc) setForm(f => ({ ...f, acc: accounts[0].name }))
+    if (categories[0] && !form.cat) setForm(f => ({ ...f, cat: categories[0].name }))
+  }, [accounts, categories])
+
+  const onEdit = (t: Transaction) => {
+    setEditingId(t.id)
+    setForm({
+      day: t.transaction_date.split('-')[2],
+      desc: t.description,
+      details: t.details || '',
+      cat: t.category,
+      acc: t.account,
+      amt: Math.abs(t.amount).toString().replace('.', ','),
+    })
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setEditingId(null)
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingId) return
+
+    const val = Number(form.amt.replace(',', '.'))
+    if (!val) return
+
+    const payload = {
+      user_id: session.user.id,
+      amount: -val,
+      description: form.desc,
+      details: form.details,
+      transaction_date: `${month}-${form.day}`,
+      account_id: accounts.find(a => a.name === form.acc)?.id,
+      category_id: categories.find(c => c.name === form.cat)?.id,
+    }
+
+    await mutations.updateTx.mutateAsync({ id: editingId, payload })
+    closeModal()
+  }
+
+  const handleDelete = async () => {
+    if (editingId && confirm('Excluir este gasto?')) {
+      await mutations.deleteTx.mutateAsync(editingId)
+      closeModal()
+    }
+  }
+
   return (
     <>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+      <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
         <span style={{ color: 'var(--muted)' }}>
           Aqui você descobre em qual categoria seu orçamento está estourando ou economizando
         </span>
@@ -712,14 +821,22 @@ function Relatorios() {
 
               {isExpanded && (
                 <div style={{ marginTop: '1rem', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
-                  {data.txs.sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)).map(t => (
+                  {data.txs.sort((a, b) => b.amount - a.amount).map(t => (
                     <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
                       <div>
-                        <span style={{ color: 'var(--muted)', marginRight: '0.5rem' }}>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                         <span>{t.description}</span>
-                        {t.details && <span style={{ color: 'var(--muted)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>({t.details})</span>}
+                        {t.details && <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>({t.details})</div>}
                       </div>
-                      <strong>{formatCurrency(t.amount)}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <strong>{formatCurrency(t.amount)}</strong>
+                        <button
+                          type="button"
+                          onClick={() => onEdit(t)}
+                          className="btn small"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -728,6 +845,18 @@ function Relatorios() {
           )
         })}
       </div>
+
+      <GastoModal
+        isOpen={isModalOpen}
+        editingId={editingId}
+        form={form}
+        setForm={setForm}
+        accounts={accounts}
+        categories={categories}
+        onSubmit={onSubmit}
+        onClose={closeModal}
+        onDelete={handleDelete}
+      />
     </>
   )
 }
@@ -750,10 +879,9 @@ function Planejamento() {
     const list = Object.entries(values).map(([catId, v]) => {
       const amount = Number(v.replace(',', '.'))
       if (isNaN(amount)) return null
-      // Get existing ID if available to allow upsert to work correctly
       const existing = budgets.find(b => b.category_id === catId)
       return {
-        id: existing?.id,
+        id: existing?.id || crypto.randomUUID(),
         user_id: session.user.id,
         category_id: catId,
         plan_month: `${month}-01`,
@@ -766,7 +894,7 @@ function Planejamento() {
 
   return (
     <>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
         <p style={{ color: 'var(--muted)', margin: 0, maxWidth: '600px' }}>
           Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>,
           você poderá ver o quanto economizou ou se ultrapassou o planejado.
