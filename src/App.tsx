@@ -397,21 +397,21 @@ function MeusGastos() {
               <tr>
                 <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
-                <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
                 <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.map(t => (
                 <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
                   <td>
                     <strong>{t.description}</strong>
                     {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
                   </td>
-                  <td><span className="badge">{t.category}</span></td>
                   <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
+                  <td><span className="badge">{t.category}</span></td>
                   <td className="col-actions" style={{ textAlign: 'right' }}>
                     <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
                   </td>
@@ -634,7 +634,7 @@ function Receitas() {
 function Relatorios() {
   const { session, month } = useFinanceContext()
   const { accounts, categories, transactions, budgets, mutations } = useFinanceData(month, session?.user?.id)
-  const [expandedCat, setExpandedCat] = useState<string | null>(null)
+  const [expandedCats, setExpandedCats] = useState<string[]>([])
   const [accountFilter, setAccountFilter] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -768,12 +768,12 @@ function Relatorios() {
           const catId = categories.find(c => c.name === cat)?.id
           const limit = budgets.find(b => b.category_id === catId)?.amount || 0
           const percentOfTotal = ((data.total / (totalDespesa || 1)) * 100).toFixed(1)
-          const isExpanded = expandedCat === cat
+          const isExpanded = expandedCats.includes(cat)
 
           return (
             <div key={cat} style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
               <div
-                onClick={() => setExpandedCat(isExpanded ? null : cat)}
+                onClick={() => setExpandedCats(prev => isExpanded ? prev.filter(x => x !== cat) : [...prev, cat])}
                 style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
