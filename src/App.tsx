@@ -30,6 +30,18 @@ const useFinanceContext = () => React.useContext(FinanceContext)!
 
 // --- Utils ---
 const formatCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const formatInsertedAt = (value?: string) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 // --- Layout & Auth ---
 function Auth() {
@@ -56,11 +68,11 @@ function Auth() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-logo">
-          <div style={{ background: 'var(--primary)', color: 'white', padding: '0.8rem', borderRadius: '1rem', marginBottom: '1.2rem', display: 'flex' }}>
+          <div className="logo-box-large">
             <PiggyBank size={42} />
           </div>
-          <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Quanto Sobra?</h1>
-          <p style={{ color: 'var(--muted)', marginTop: '0.5rem', fontSize: '0.95rem' }}>
+          <h1 className="u-m-0 u-text-xl">Quanto Sobra?</h1>
+          <p className="u-text-muted u-text-base u-mt-md" style={{ color: 'var(--muted)' }}>
             Controle seus gastos para sobrar mais no fim do mês
           </p>
         </div>
@@ -84,14 +96,14 @@ function Auth() {
               required
             />
           </label>
-          <button type="submit" className="btn" style={{ width: '100%', height: '48px', fontSize: '1rem' }} disabled={loading}>
+          <button type="submit" className="btn" style={{ width: '100%', height: '48px' }} disabled={loading}>
             {loading ? 'Processando...' : mode === 'login' ? 'Entrar no sistema' : 'Criar minha conta'}
           </button>
         </form>
 
         <button
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-          style={{ marginTop: '1.2rem', background: 'none', border: 'none', color: 'var(--primary)', width: '100%', cursor: 'pointer', fontWeight: 600 }}
+          className="u-mt-lg u-cursor-pointer u-font-600" style={{ background: 'none', border: 'none', color: 'var(--primary)', width: '100%' }}
         >
           {mode === 'login' ? 'Ainda não tem uma conta? Cadastre-se' : 'Já possui uma conta? Faça o login'}
         </button>
@@ -124,35 +136,35 @@ function Layout({ children, month, setMonth }: any) {
   return (
     <div className="container">
       <header className="header">
-        <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <div style={{ background: 'var(--primary)', color: 'white', padding: '0.5rem', borderRadius: '0.75rem', display: 'flex' }}>
+        <div className="header-logo u-flex-center u-gap-lg">
+          <div className="logo-box">
             <PiggyBank size={24} />
           </div>
           <div>
-            <h1 style={{ marginBottom: '2px' }}>Quanto Sobra?</h1>
+            <h1 className="u-mb-xs">Quanto Sobra?</h1>
             <p>Controle seus gastos mensais</p>
           </div>
         </div>
 
         <nav className="nav-menu">
           <button onClick={() => navigate({ to: '/' })} className={`nav-item ${activeTab === '/' ? 'active' : ''}`}>
-            <BanknoteArrowDown size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            <BanknoteArrowDown size={16} className="icon-nav" />
             Gastos
           </button>
           <button onClick={() => navigate({ to: '/receitas' })} className={`nav-item ${activeTab === '/receitas' ? 'active' : ''}`}>
-            <BanknoteArrowUp size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            <BanknoteArrowUp size={16} className="icon-nav" />
             Receitas
           </button>
           <button onClick={() => navigate({ to: '/relatorios' })} className={`nav-item ${activeTab === '/relatorios' ? 'active' : ''}`}>
-            <BarChart3 size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            <BarChart3 size={16} className="icon-nav" />
             Relatórios
           </button>
           <button onClick={() => navigate({ to: '/planejamento' })} className={`nav-item ${activeTab === '/planejamento' ? 'active' : ''}`}>
-            <Target size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+            <Target size={16} className="icon-nav" />
             Planejamento
           </button>
           <button onClick={() => navigate({ to: '/config' })} className={`nav-item ${activeTab === '/config' ? 'active' : ''}`}>
-            <Settings size={18} style={{ verticalAlign: 'middle' }} />
+            <Settings size={18} className="icon-spacing" />
           </button>
         </nav>
 
@@ -183,6 +195,7 @@ type GastoFormState = {
 function GastoModal({
   isOpen,
   editingId,
+  insertedAt,
   form,
   setForm,
   accounts,
@@ -194,6 +207,7 @@ function GastoModal({
 }: {
   isOpen: boolean
   editingId: string | null
+  insertedAt?: string | null
   form: GastoFormState
   setForm: (next: GastoFormState) => void
   accounts: Account[]
@@ -209,8 +223,11 @@ function GastoModal({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{editingId ? 'Editar Gasto' : 'Novo Gasto'}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+          <div>
+            <h2>{editingId ? 'Editar Gasto' : 'Novo Gasto'}</h2>
+            {editingId && insertedAt && <div className="u-text-sm u-text-muted">Inserido em: {insertedAt}</div>}
+          </div>
+          <button onClick={onClose} className="btn-reset">
             <X size={24} />
           </button>
         </div>
@@ -223,12 +240,12 @@ function GastoModal({
             <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
             <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-              <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
+              <button type="submit" className="btn" style={{ flex: 1, height: '44px' }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
               {!editingId && allowConfirmPlusOne && (
-                <button type="button" className="btn" style={{ flex: 1, height: '44px', marginTop: 0, background: 'var(--success)' }} onClick={e => onSubmit(e as any, true)}>Confirmar +1</button>
+                <button type="button" className="btn" style={{ flex: 1, height: '44px', background: 'var(--success)' }} onClick={e => onSubmit(e as any, true)}>Confirmar +1</button>
               )}
               {editingId && onDelete && (
-                <button type="button" onClick={onDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
+                <button type="button" onClick={onDelete} className="btn danger" style={{ height: '44px' }}>
                   <Trash2 size={18} />
                 </button>
               )}
@@ -247,6 +264,7 @@ function MeusGastos() {
   const [activeAccountTab, setActiveAccountTab] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const [editingInsertedAt, setEditingInsertedAt] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>({ key: 'createdat', direction: 'desc' })
 
@@ -329,6 +347,7 @@ function MeusGastos() {
 
   const onEdit = (t: Transaction) => {
     setEditingId(t.id)
+    setEditingInsertedAt(formatInsertedAt(t.createdat))
     setForm({
       day: t.transaction_date.split('-')[2],
       desc: t.description,
@@ -342,6 +361,7 @@ function MeusGastos() {
 
   const onAdd = () => {
     setEditingId(null)
+    setEditingInsertedAt(null)
     setForm({
       ...form,
       day: new Date().getDate().toString().padStart(2, '0'),
@@ -355,6 +375,7 @@ function MeusGastos() {
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
+    setEditingInsertedAt(null)
   }
 
   const handleDelete = async () => {
@@ -367,7 +388,7 @@ function MeusGastos() {
   return (
     <>
       <div className="mobile-view-header">
-        <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>
+        <p className="u-text-muted u-text-base u-m-0">
           Gerencie seus gastos mensais
         </p>
         <button onClick={onAdd} className="btn-primary-large">
@@ -397,10 +418,10 @@ function MeusGastos() {
             <thead>
               <tr>
                 <th onClick={() => handleSort('transaction_date')} style={{ cursor: 'pointer' }}>Data <ArrowUpDown size={14} /></th>
-                <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
-                <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
-                <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
-                <th className="col-actions" onClick={() => handleSort('createdat')} style={{ textAlign: 'right', cursor: 'pointer' }} title='Clique para ordenar por data de insercao dos dados'>Ações <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('description')} className="u-cursor-pointer">Gasto <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('amount')} className="u-text-right u-cursor-pointer">Valor <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('category')} className="u-cursor-pointer">Categoria <ArrowUpDown size={14} /></th>
+                <th className="col-actions u-text-right u-cursor-pointer" onClick={() => handleSort('createdat')} title='Clique para ordenar por data de insercao dos dados'>Ações <ArrowUpDown size={14} /></th>
               </tr>
             </thead>
             <tbody>
@@ -409,11 +430,11 @@ function MeusGastos() {
                   <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
                   <td>
                     <strong>{t.description}</strong>
-                    {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                    {t.details && <div className="u-text-sm u-text-muted">{t.details}</div>}
                   </td>
-                  <td style={{ textAlign: 'right' }}>{formatCurrency(t.amount)}</td>
+                  <td className="u-text-right">{formatCurrency(t.amount)}</td>
                   <td><span className="badge">{t.category}</span></td>
-                  <td className="col-actions" style={{ textAlign: 'right' }}>
+                  <td className="col-actions u-text-right">
                     <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
                   </td>
                 </tr>
@@ -426,6 +447,7 @@ function MeusGastos() {
       <GastoModal
         isOpen={isModalOpen}
         editingId={editingId}
+        insertedAt={editingInsertedAt}
         form={form}
         setForm={setForm}
         accounts={accounts}
@@ -543,7 +565,7 @@ function Receitas() {
   return (
     <>
       <div className="mobile-view-header">
-        <p style={{ color: 'var(--muted)', margin: 0, fontSize: '0.9rem' }}>
+        <p className="u-text-muted u-text-base u-m-0">
           Registre suas entradas e acompanhe o crescimento do seu saldo
         </p>
         <button onClick={onAdd} className="btn-primary-large">
@@ -585,11 +607,11 @@ function Receitas() {
                   <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
                   <td>
                     <strong>{t.description}</strong>
-                    {t.details && <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t.details}</div>}
+                    {t.details && <div className="u-text-sm u-text-muted">{t.details}</div>}
                   </td>
                   <td><span className="badge">{t.account}</span></td>
-                  <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 'bold' }}>{formatCurrency(t.amount)}</td>
-                  <td className="col-actions" style={{ textAlign: 'right' }}>
+                  <td className="u-text-right u-font-bold" style={{ color: 'var(--success)' }}>{formatCurrency(t.amount)}</td>
+                  <td className="col-actions u-text-right">
                     <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
                   </td>
                 </tr>
@@ -604,7 +626,7 @@ function Receitas() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingId ? 'Editar Receita' : 'Nova Receita'}</h2>
-              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+              <button onClick={closeModal} className="btn-reset">
                 <X size={24} />
               </button>
             </div>
@@ -616,9 +638,9 @@ function Receitas() {
                 <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
                 <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
-                  <button type="submit" className="btn" style={{ flex: 1, height: '44px', marginTop: 0 }}>{editingId ? 'Salvar Alterações' : 'Confirmar Receita'}</button>
+                  <button type="submit" className="btn" style={{ flex: 1, height: '44px' }}>{editingId ? 'Salvar Alterações' : 'Confirmar Receita'}</button>
                   {editingId && (
-                    <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px', marginTop: 0 }}>
+                    <button type="button" onClick={handleDelete} className="btn danger" style={{ height: '44px' }}>
                       <Trash2 size={18} />
                     </button>
                   )}
@@ -638,6 +660,7 @@ function Relatorios() {
   const [expandedCats, setExpandedCats] = useState<string[]>([])
   const [accountFilter, setAccountFilter] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingInsertedAt, setEditingInsertedAt] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form, setForm] = useState<GastoFormState>({
     day: new Date().getDate().toString().padStart(2, '0'),
@@ -674,6 +697,7 @@ function Relatorios() {
 
   const onEdit = (t: Transaction) => {
     setEditingId(t.id)
+    setEditingInsertedAt(formatInsertedAt(t.createdat))
     setForm({
       day: t.transaction_date.split('-')[2],
       desc: t.description,
@@ -688,6 +712,7 @@ function Relatorios() {
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingId(null)
+    setEditingInsertedAt(null)
   }
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -721,7 +746,7 @@ function Relatorios() {
   return (
     <>
       <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
-        <span style={{ color: 'var(--muted)' }}>
+        <span className="u-text-muted">
           Aqui você descobre em qual categoria seu orçamento está estourando ou economizando
         </span>
         <select
@@ -735,16 +760,16 @@ function Relatorios() {
       </div>
       <div className="summary">
         <div className="card receita">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BanknoteArrowUp size={16} /> Receita</h3>
+          <h3 className="u-flex-center" style={{ gap: '0.4rem' }}><BanknoteArrowUp size={16} /> Receita</h3>
           <strong>{formatCurrency(totalReceita)}</strong>
         </div>
         <div className="card despesa">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><BanknoteArrowDown size={16} /> Despesa</h3>
+          <h3 className="u-flex-center" style={{ gap: '0.4rem' }}><BanknoteArrowDown size={16} /> Despesa</h3>
           <strong>{formatCurrency(totalDespesa)}</strong>
         </div>
         <div className="card saldo">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><CircleDollarSign size={16} /> Saldo</h3>
+          <div className="u-flex-between">
+            <h3 className="u-flex-center" style={{ gap: '0.4rem' }}><CircleDollarSign size={16} /> Saldo</h3>
             <span style={{
               fontSize: '0.65rem',
               fontWeight: 'bold',
@@ -763,76 +788,52 @@ function Relatorios() {
         </div>
       </div>
 
-      <div className="panel" style={{ marginTop: '1.5rem' }}>
-        <h2 style={{ marginBottom: '1.5rem' }}>Gastos por Categoria</h2>
+      <div style={{ marginTop: '1.5rem' }}>
+        <h2 className="u-mb-lg u-text-center">Gastos por Categoria</h2>
         {statsByCat.map(([cat, data]) => {
           const catId = categories.find(c => c.name === cat)?.id
           const limit = budgets.find(b => b.category_id === catId)?.amount || 0
-          const percentOfTotal = ((data.total / (totalDespesa || 1)) * 100).toFixed(1)
           const isExpanded = expandedCats.includes(cat)
 
           return (
-            <div key={cat} style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+            <div key={cat} className="report-category-card panel" style={{ marginBottom: '1.5rem' }}>
               <div
                 onClick={() => setExpandedCats(prev => isExpanded ? prev.filter(x => x !== cat) : [...prev, cat])}
-                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}
+                className="u-cursor-pointer u-flex-between u-mb-sm"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div className="u-flex-center" style={{ gap: '0.5rem' }}>
                   <span style={{ display: 'flex' }}>{isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</span>
                   <strong>{cat}</strong>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 'bold' }}>{formatCurrency(data.total)}</div>
+                <div className="u-text-right">
+                  <div className="u-font-bold">{formatCurrency(data.total)}</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.2rem' }}>
-                    <span>% do Total ({percentOfTotal}%)</span>
-                  </div>
-                  <div className="progress" style={{ height: '6px' }}>
-                    <div className="fill" style={{ width: `${percentOfTotal}%`, background: 'var(--primary)' }} />
-                  </div>
+              {limit > 0 && (
+                <div className="u-flex-between u-text-sm u-mt-md">
+                  <span style={{ color: data.total > limit ? 'var(--danger)' : 'var(--success)' }}>
+                    Limite: {formatCurrency(limit)}
+                  </span>
+                  <span className="u-font-bold" style={{ color: data.total > limit ? 'var(--danger)' : 'var(--success)' }}>
+                    {data.total > limit ? `gastou a mais ${formatCurrency(data.total - limit)}` : `economizou ${formatCurrency(limit - data.total)}`}
+                  </span>
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.2rem' }}>
-                    <span>Uso do Limite ({limit > 0 ? ((data.total / limit) * 100).toFixed(1) : '100'}%)</span>
-                    {limit > 0 && (
-                      <span style={{ color: data.total > limit ? 'var(--danger)' : 'var(--success)' }}>
-                        Limite: {formatCurrency(limit)}
-                        <span style={{ marginLeft: '0.4rem', fontWeight: 'bold' }}>
-                          ({data.total > limit ? `gastou a mais ${formatCurrency(data.total - limit)}` : `economizou ${formatCurrency(limit - data.total)}`})
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="progress" style={{ height: '8px' }}>
-                    <div
-                      className="fill"
-                      style={{
-                        width: `${Math.min(100, (data.total / (limit || data.total)) * 100)}%`,
-                        background: limit > 0 && data.total > limit ? 'var(--danger)' : 'var(--success)'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
 
               {isExpanded && (
                 <div style={{ marginTop: '1rem', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
                   {data.txs.sort((a, b) => b.amount - a.amount).map(t => (
-                    <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
+                    <div key={t.id} className="gasto-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
                       <div>
                         <span>{t.description}</span>
-                        {t.details && <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>({t.details})</div>}
-                        <div style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        {t.details && <div className="u-text-muted u-text-sm">({t.details})</div>}
+                        <div className="u-text-muted u-text-sm u-flex-center u-gap-xs">
                           <Wallet size={12} />
                           <span>{t.account}</span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                     <div className="u-flex-center u-gap-md">
                         <strong>{formatCurrency(t.amount)}</strong>
                         <button
                           type="button"
@@ -854,6 +855,7 @@ function Relatorios() {
       <GastoModal
         isOpen={isModalOpen}
         editingId={editingId}
+        insertedAt={editingInsertedAt}
         form={form}
         setForm={setForm}
         accounts={accounts}
@@ -900,7 +902,7 @@ function Planejamento() {
   return (
     <>
       <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
-        <p style={{ color: 'var(--muted)', margin: 0, maxWidth: '600px' }}>
+        <p className="u-text-muted u-m-0" style={{ maxWidth: '600px' }}>
           Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>,
           você poderá ver o quanto economizou ou se ultrapassou o planejado.
         </p>
