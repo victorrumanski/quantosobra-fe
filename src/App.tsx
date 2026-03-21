@@ -17,6 +17,7 @@ import {
   Plus,
   LogOut,
   CircleDollarSign,
+  Wallet,
   BanknoteArrowDown,
   BanknoteArrowUp,
   PiggyBank,
@@ -247,7 +248,7 @@ function MeusGastos() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>({ key: 'transaction_date', direction: 'desc' })
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; direction: 'asc' | 'desc' } | null>({ key: 'createdat', direction: 'desc' })
 
   const [form, setForm] = useState({
     day: new Date().getDate().toString().padStart(2, '0'),
@@ -399,7 +400,7 @@ function MeusGastos() {
                 <th onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>Gasto <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('amount')} style={{ textAlign: 'right', cursor: 'pointer' }}>Valor <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('category')} style={{ cursor: 'pointer' }}>Categoria <ArrowUpDown size={14} /></th>
-                <th className="col-actions" style={{ textAlign: 'right' }}>Ações</th>
+                <th className="col-actions" onClick={() => handleSort('createdat')} style={{ textAlign: 'right', cursor: 'pointer' }} title='Clique para ordenar por data de insercao dos dados'>Ações <ArrowUpDown size={14} /></th>
               </tr>
             </thead>
             <tbody>
@@ -826,6 +827,10 @@ function Relatorios() {
                       <div>
                         <span>{t.description}</span>
                         {t.details && <div style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>({t.details})</div>}
+                        <div style={{ color: 'var(--muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Wallet size={12} />
+                          <span>{t.account}</span>
+                        </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <strong>{formatCurrency(t.amount)}</strong>

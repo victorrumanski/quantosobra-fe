@@ -13,6 +13,7 @@ export const TransactionType = {
 export interface Transaction {
   id: string
   transaction_date: string
+  createdat?: string
   description: string
   details: string
   category: string
@@ -67,6 +68,7 @@ export const financeService = {
     if (error) throw error
     return (data || []).map(t => ({
       ...t,
+      createdat: t.createdat || t.created_at || '',
       description: t.description || '',
       details: t.details || '',
       amount: Math.abs(Number(t.amount)),
