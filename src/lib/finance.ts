@@ -22,6 +22,13 @@ export interface Transaction {
   amount: number
   account_id?: string
   category_id?: string
+  planned_item_id?: string | null
+}
+
+export interface PlannedBudgetItem {
+  id: string
+  name: string
+  amount: number
 }
 
 export interface Budget {
@@ -30,6 +37,7 @@ export interface Budget {
   category_id: string
   plan_month: string
   amount: number
+  planned_items?: PlannedBudgetItem[]
   category?: { name: string } // Support for the join
 }
 
@@ -45,6 +53,19 @@ export interface Account {
 
 // --- Service ---
 export const financeService = {
+  parsePlannedItems(raw: any): PlannedBudgetItem[] {
+    if (!Array.isArray(raw)) return []
+
+    return raw
+      .map((item, index) => {
+        const id = String(item?.id ?? '').trim() || `planned_${index}_${String(item?.name ?? '').trim().toLowerCase().replace(/\s+/g, '_')}`
+        const name = String(item?.name ?? item?.nome ?? '').trim()
+        const amount = Number(item?.amount ?? item?.valor ?? 0)
+        if (!name && !amount) return null
+        return { id, name, amount: Number.isFinite(amount) ? amount : 0 }
+      })
+      .filter((item): item is PlannedBudgetItem => item !== null)
+  },
   async getAccounts() {
     const { data, error } = await supabase.from('accounts').select('*').order('name')
     if (error) throw error
@@ -83,7 +104,8 @@ export const financeService = {
     if (error) throw error
     return (data || []).map(p => ({
       ...p,
-      amount: Number(p.amount),
+      planned_items: financeService.parsePlannedItems(p.planned_items),
+      amount: Number(p.amount ?? 0),
       category: p.categories
     })) as Budget[]
   },
@@ -103,7 +125,9 @@ export const financeService = {
   },
   async saveAllBudgets(list: any[]) {
     if (list.length === 0) return
-    const { error } = await supabase.from('category_plan').upsert(list)
+    const { error } = await supabase
+      .from('category_plan')
+      .upsert(list, { onConflict: 'user_id,category_id,plan_month' })
     if (error) throw error
   }
 }

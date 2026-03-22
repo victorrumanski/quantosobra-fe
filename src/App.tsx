@@ -3,7 +3,7 @@ import { createRootRoute, createRoute, createRouter, Outlet, useNavigate, useLoc
 import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
-import { useFinanceData, TransactionType, type Transaction, type Account, type Category } from './lib/finance'
+import { useFinanceData, TransactionType, type Transaction, type Account, type Category, type PlannedBudgetItem } from './lib/finance'
 import {
   Settings,
   Pencil,
@@ -190,6 +190,7 @@ type GastoFormState = {
   cat: string
   acc: string
   amt: string
+  plannedItemId: string
 }
 
 function GastoModal({
@@ -200,6 +201,8 @@ function GastoModal({
   setForm,
   accounts,
   categories,
+  plannedItems,
+  plannedUsageCountById,
   onSubmit,
   onClose,
   onDelete,
@@ -212,6 +215,8 @@ function GastoModal({
   setForm: (next: GastoFormState) => void
   accounts: Account[]
   categories: Category[]
+  plannedItems: PlannedBudgetItem[]
+  plannedUsageCountById: Record<string, number>
   onSubmit: (e: React.FormEvent, keepOpen?: boolean) => void | Promise<void>
   onClose: () => void
   onDelete?: () => void | Promise<void>
@@ -237,7 +242,39 @@ function GastoModal({
             <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
             <label>Nome <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
             <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-            <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+            <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value, plannedItemId: '' })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+            {plannedItems.length > 0 && (
+              <div className="planned-match-box">
+                <div className="u-text-sm u-text-muted">Vincular com item planejado (opcional)</div>
+                <div className="planned-match-list">
+                  {plannedItems.map(item => {
+                    const usage = plannedUsageCountById[item.id] || 0
+                    const isSelected = form.plannedItemId === item.id
+                    return (
+                      <div
+                        key={item.id}
+                        className={`planned-match-item ${isSelected ? 'planned-match-selected' : ''}`}
+                        onClick={() => setForm({ ...form, plannedItemId: isSelected ? '' : item.id })}
+                      >
+                        <div>
+                          <div>{item.name}</div>
+                          <div className="u-text-sm u-text-muted">{usage} vínculos este mês</div>
+                        </div>
+                        <div className="u-text-right">{formatCurrency(item.amount)}</div>
+                        <input
+                          type="checkbox"
+                          className="planned-match-checkbox"
+                          checked={isSelected}
+                          onClick={e => e.stopPropagation()}
+                          onChange={() => setForm({ ...form, plannedItemId: isSelected ? '' : item.id })}
+                          aria-label={`Vincular item planejado ${item.name}`}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
               <button type="submit" className="btn" style={{ flex: 1, height: '44px' }}>{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
@@ -260,7 +297,7 @@ function GastoModal({
 // --- Route Components ---
 function MeusGastos() {
   const { session, month } = useFinanceContext()
-  const { accounts, categories, transactions, mutations } = useFinanceData(month, session?.user?.id)
+  const { accounts, categories, budgets, transactions, mutations } = useFinanceData(month, session?.user?.id)
   const [activeAccountTab, setActiveAccountTab] = useState('Todas')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
@@ -275,7 +312,32 @@ function MeusGastos() {
     cat: '',
     acc: '',
     amt: '',
+    plannedItemId: '',
   })
+
+  const plannedItemsByCategory = useMemo(() => {
+    const map: Record<string, PlannedBudgetItem[]> = {}
+    categories.forEach(c => {
+      const budget = budgets.find(b => b.category_id === c.id)
+      map[c.name] = budget?.planned_items || []
+    })
+    return map
+  }, [categories, budgets])
+
+  const plannedItemsForSelectedCategory = useMemo(() => {
+    return plannedItemsByCategory[form.cat] || []
+  }, [plannedItemsByCategory, form.cat])
+
+  const plannedUsageCountById = useMemo(() => {
+    const map: Record<string, number> = {}
+    transactions
+      .filter(t => t.type === TransactionType.DESPESA && t.planned_item_id)
+      .forEach(t => {
+        const key = String(t.planned_item_id)
+        map[key] = (map[key] || 0) + 1
+      })
+    return map
+  }, [transactions])
 
   useEffect(() => {
     if (accounts[0] && !form.acc) setForm(f => ({ ...f, acc: accounts[0].name }))
@@ -329,6 +391,7 @@ function MeusGastos() {
       transaction_date: `${month}-${form.day}`,
       account_id: accounts.find(a => a.name === form.acc)?.id,
       category_id: categories.find(c => c.name === form.cat)?.id,
+      planned_item_id: form.plannedItemId || null,
     }
     let res;
     if (editingId) res = await mutations.updateTx.mutateAsync({ id: editingId, payload })
@@ -355,6 +418,7 @@ function MeusGastos() {
       cat: t.category,
       acc: t.account,
       amt: Math.abs(t.amount).toString().replace('.', ','),
+      plannedItemId: t.planned_item_id || '',
     })
     setIsModalOpen(true)
   }
@@ -368,6 +432,7 @@ function MeusGastos() {
       desc: '',
       details: '',
       amt: '',
+      plannedItemId: '',
     })
     setIsModalOpen(true)
   }
@@ -388,7 +453,7 @@ function MeusGastos() {
   return (
     <>
       <div className="mobile-view-header">
-        <p className="u-text-muted u-text-base u-m-0">
+        <p className="u-text-muted u-m-0" style={{ maxWidth: '600px' }}>
           Gerencie seus gastos mensais
         </p>
         <button onClick={onAdd} className="btn-primary-large">
@@ -452,6 +517,8 @@ function MeusGastos() {
         setForm={setForm}
         accounts={accounts}
         categories={categories}
+        plannedItems={plannedItemsForSelectedCategory}
+        plannedUsageCountById={plannedUsageCountById}
         onSubmit={onSubmit}
         onClose={closeModal}
         onDelete={handleDelete}
@@ -565,7 +632,7 @@ function Receitas() {
   return (
     <>
       <div className="mobile-view-header">
-        <p className="u-text-muted u-text-base u-m-0">
+        <p className="u-text-muted u-m-0" style={{ maxWidth: '600px' }}>
           Registre suas entradas e acompanhe o crescimento do seu saldo
         </p>
         <button onClick={onAdd} className="btn-primary-large">
@@ -669,7 +736,32 @@ function Relatorios() {
     cat: '',
     acc: '',
     amt: '',
+    plannedItemId: '',
   })
+
+  const plannedItemsByCategory = useMemo(() => {
+    const map: Record<string, PlannedBudgetItem[]> = {}
+    categories.forEach(c => {
+      const budget = budgets.find(b => b.category_id === c.id)
+      map[c.name] = budget?.planned_items || []
+    })
+    return map
+  }, [categories, budgets])
+
+  const plannedItemsForSelectedCategory = useMemo(() => {
+    return plannedItemsByCategory[form.cat] || []
+  }, [plannedItemsByCategory, form.cat])
+
+  const plannedUsageCountById = useMemo(() => {
+    const map: Record<string, number> = {}
+    transactions
+      .filter(t => t.type === TransactionType.DESPESA && t.planned_item_id)
+      .forEach(t => {
+        const key = String(t.planned_item_id)
+        map[key] = (map[key] || 0) + 1
+      })
+    return map
+  }, [transactions])
 
   const filteredTxs = useMemo(() => {
     if (accountFilter === 'Todas') return transactions
@@ -690,6 +782,16 @@ function Relatorios() {
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total)
   }, [monthDespesas])
 
+  const plannedAmountByItemId = useMemo(() => {
+    const map: Record<string, number> = {}
+    budgets.forEach(budget => {
+      ;(budget.planned_items || []).forEach(item => {
+        map[item.id] = item.amount
+      })
+    })
+    return map
+  }, [budgets])
+
   useEffect(() => {
     if (accounts[0] && !form.acc) setForm(f => ({ ...f, acc: accounts[0].name }))
     if (categories[0] && !form.cat) setForm(f => ({ ...f, cat: categories[0].name }))
@@ -705,6 +807,7 @@ function Relatorios() {
       cat: t.category,
       acc: t.account,
       amt: Math.abs(t.amount).toString().replace('.', ','),
+      plannedItemId: t.planned_item_id || '',
     })
     setIsModalOpen(true)
   }
@@ -730,6 +833,7 @@ function Relatorios() {
       transaction_date: `${month}-${form.day}`,
       account_id: accounts.find(a => a.name === form.acc)?.id,
       category_id: categories.find(c => c.name === form.cat)?.id,
+      planned_item_id: form.plannedItemId || null,
     }
 
     await mutations.updateTx.mutateAsync({ id: editingId, payload })
@@ -746,9 +850,9 @@ function Relatorios() {
   return (
     <>
       <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
-        <span className="u-text-muted">
+        <p className="u-text-muted u-m-0" style={{ maxWidth: '600px' }}>
           Aqui você descobre em qual categoria seu orçamento está estourando ou economizando
-        </span>
+        </p>
         <select
           className="account-filter-select"
           value={accountFilter}
@@ -824,7 +928,7 @@ function Relatorios() {
               {isExpanded && (
                 <div style={{ marginTop: '1rem', paddingLeft: '2rem', display: 'flex', flexDirection: 'column' }}>
                   {data.txs.sort((a, b) => b.amount - a.amount).map(t => (
-                    <div key={t.id} className="gasto-item" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
+                    <div key={t.id} className="gasto-item report-expense-row" style={{ fontSize: '0.9rem', color: 'var(--text)', borderBottom: '1px solid #f1f5f9', padding: '0.4rem 0' }}>
                       <div>
                         <span>{t.description}</span>
                         {t.details && <div className="u-text-muted u-text-sm">({t.details})</div>}
@@ -833,8 +937,28 @@ function Relatorios() {
                           <span>{t.account}</span>
                         </div>
                       </div>
-                     <div className="u-flex-center u-gap-md">
-                        <strong>{formatCurrency(t.amount)}</strong>
+                      <div className="report-expense-right">
+                        <div className="report-expense-values">
+                          <strong>{formatCurrency(t.amount)}</strong>
+                          {(() => {
+                            const plannedAmount = t.planned_item_id ? plannedAmountByItemId[t.planned_item_id] : undefined
+                            if (plannedAmount === undefined) return null
+
+                            const isWithinPlanned = t.amount <= plannedAmount
+                            const isOverTwoPercent = t.amount > plannedAmount * 1.02
+                            const plannedColor = isOverTwoPercent
+                              ? 'var(--danger)'
+                              : isWithinPlanned
+                                ? 'var(--success)'
+                                : 'var(--muted)'
+
+                            return (
+                              <div className="u-text-sm" style={{ color: plannedColor }}>
+                                Plano: {formatCurrency(plannedAmount)}
+                              </div>
+                            )
+                          })()}
+                        </div>
                         <button
                           type="button"
                           onClick={() => onEdit(t)}
@@ -860,6 +984,8 @@ function Relatorios() {
         setForm={setForm}
         accounts={accounts}
         categories={categories}
+        plannedItems={plannedItemsForSelectedCategory}
+        plannedUsageCountById={plannedUsageCountById}
         onSubmit={onSubmit}
         onClose={closeModal}
         onDelete={handleDelete}
@@ -871,40 +997,130 @@ function Relatorios() {
 function Planejamento() {
   const { session, month } = useFinanceContext()
   const { categories, budgets, mutations } = useFinanceData(month, session?.user?.id)
-  const [values, setValues] = useState<Record<string, string>>({})
+  const [itemsByCategory, setItemsByCategory] = useState<Record<string, Array<{ id: string; name: string; amount: string }>>>({})
+  const [isCopyingNextMonth, setIsCopyingNextMonth] = useState(false)
 
   useEffect(() => {
-    const map: Record<string, string> = {}
+    const map: Record<string, Array<{ id: string; name: string; amount: string }>> = {}
     categories.forEach(c => {
       const b = budgets.find(x => x.category_id === c.id)
-      map[c.id] = b ? b.amount.toString().replace('.', ',') : ''
+      const plannedItems = (b?.planned_items || []) as PlannedBudgetItem[]
+
+      if (plannedItems.length > 0) {
+        map[c.id] = plannedItems.map(item => ({
+          id: item.id || crypto.randomUUID(),
+          name: item.name,
+          amount: item.amount.toString().replace('.', ','),
+        }))
+      } else if (b && b.amount > 0) {
+        map[c.id] = [{ id: crypto.randomUUID(), name: 'Item planejado', amount: b.amount.toString().replace('.', ',') }]
+      } else {
+        map[c.id] = []
+      }
     })
-    setValues(map)
+    setItemsByCategory(map)
   }, [categories, budgets])
 
-  const onSave = async () => {
-    const list = Object.entries(values).map(([catId, v]) => {
-      const amount = Number(v.replace(',', '.'))
-      if (isNaN(amount)) return null
-      const existing = budgets.find(b => b.category_id === catId)
+  const addItem = (catId: string) => {
+    setItemsByCategory(prev => ({
+      ...prev,
+      [catId]: [...(prev[catId] || []), { id: crypto.randomUUID(), name: '', amount: '' }]
+    }))
+  }
+
+  const removeItem = (catId: string, itemId: string) => {
+    setItemsByCategory(prev => ({
+      ...prev,
+      [catId]: (prev[catId] || []).filter(item => item.id !== itemId)
+    }))
+  }
+
+  const updateItem = (catId: string, itemId: string, key: 'name' | 'amount', value: string) => {
+    setItemsByCategory(prev => ({
+      ...prev,
+      [catId]: (prev[catId] || []).map(item => item.id === itemId ? { ...item, [key]: value } : item)
+    }))
+  }
+
+  const sumCategory = (catId: string) => {
+    return (itemsByCategory[catId] || []).reduce((acc, item) => {
+      const amount = Number(item.amount.replace(',', '.'))
+      return acc + (Number.isFinite(amount) ? amount : 0)
+    }, 0)
+  }
+
+  const buildPlanPayload = (planMonth: string, existingByCategory: Record<string, string | undefined>) => {
+    return categories.map(category => {
+      const catId = category.id
+
+      const plannedItems = (itemsByCategory[catId] || [])
+        .map(item => ({
+          id: item.id,
+          name: item.name.trim(),
+          amount: Number(item.amount.replace(',', '.')) || 0,
+        }))
+        .filter(item => item.name || item.amount > 0)
+
+      const total = plannedItems.reduce((acc, item) => acc + item.amount, 0)
+
       return {
-        id: existing?.id || crypto.randomUUID(),
+        id: existingByCategory[catId] || crypto.randomUUID(),
         user_id: session.user.id,
         category_id: catId,
-        plan_month: `${month}-01`,
-        amount: amount
+        plan_month: planMonth,
+        amount: total,
+        planned_items: plannedItems,
       }
-    }).filter(x => x !== null)
+    })
+  }
+
+  const onSave = async () => {
+    const existingByCategory = Object.fromEntries(budgets.map(b => [b.category_id, b.id]))
+    const list = buildPlanPayload(`${month}-01`, existingByCategory)
 
     await mutations.saveBudgets.mutateAsync(list)
+  }
+
+  const onCopyToNextMonth = async () => {
+    const shouldProceed = confirm('Isso vai copiar o planejamento atual para o próximo mês e pode sobrescrever dados já existentes. Deseja continuar?')
+    if (!shouldProceed) return
+
+    setIsCopyingNextMonth(true)
+    try {
+      const [year, monthNumber] = month.split('-').map(Number)
+      const nextMonth = monthNumber === 12
+        ? `${year + 1}-01`
+        : `${year}-${String(monthNumber + 1).padStart(2, '0')}`
+      const nextPlanMonth = `${nextMonth}-01`
+
+      const { data, error } = await supabase
+        .from('category_plan')
+        .select('id, category_id')
+        .eq('user_id', session.user.id)
+        .eq('plan_month', nextPlanMonth)
+
+      if (error) throw error
+
+      const existingByCategory: Record<string, string | undefined> = {}
+      ;(data || []).forEach((row: any) => {
+        existingByCategory[row.category_id] = row.id
+      })
+
+      const list = buildPlanPayload(nextPlanMonth, existingByCategory)
+      await mutations.saveBudgets.mutateAsync(list)
+      toast.success(`Planejamento copiado para ${nextMonth}`)
+    } finally {
+      setIsCopyingNextMonth(false)
+    }
   }
 
   return (
     <>
       <div className="mobile-view-header" style={{ marginBottom: '1.5rem' }}>
         <p className="u-text-muted u-m-0" style={{ maxWidth: '600px' }}>
-          Estipule um teto de gastos para cada categoria. No <strong>Relatórios</strong>,
-          você poderá ver o quanto economizou ou se ultrapassou o planejado.
+          Aqui você pode cadastrar seus gastos fixos e variáveis do mês. 
+          Assim, o sistema avisa quando algum gasto fixo, como condomínio ou financiamento, vier mais caro do que o planejado. Isso também ajuda a conferir se os valores que você pensa que gasta são realmente os que você gasta. 
+          Sabe aquele papo de “eu gasto somente 300 por mês com lanches”, mas no fim acaba gastando 800? Isso aqui vai ajudar.
         </p>
         <button className="btn-primary-large" onClick={onSave} disabled={mutations.saveBudgets.isPending}>
           {mutations.saveBudgets.isPending ? 'Salvando...' : 'Salvar Planejamento'}
@@ -915,16 +1131,47 @@ function Planejamento() {
           <div key={c.id} className="budget-card">
             <div className="budget-card-header">
               <h3>{c.name}</h3>
-              <input
-                type="text"
-                placeholder="0,00"
-                style={{ width: '100px', padding: '0.2rem' }}
-                value={values[c.id] || ''}
-                onChange={e => setValues({ ...values, [c.id]: e.target.value })}
-              />
+              <strong>{formatCurrency(sumCategory(c.id))}</strong>
             </div>
+
+            <div className="plan-items-list">
+              {(itemsByCategory[c.id] || []).map(item => (
+                <div key={item.id} className="plan-item-row">
+                  <input
+                    type="text"
+                    placeholder="Nome do gasto"
+                    value={item.name}
+                    onChange={e => updateItem(c.id, item.id, 'name', e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="0,00"
+                    value={item.amount}
+                    onChange={e => updateItem(c.id, item.id, 'amount', e.target.value)}
+                  />
+                  <button type="button" className="btn danger small" onClick={() => removeItem(c.id, item.id)}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" className="btn small plan-add-btn" onClick={() => addItem(c.id)}>
+              <Plus size={14} /> Adicionar gasto planejado
+            </button>
           </div>
         ))}
+      </div>
+
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-start' }}>
+        <button
+          type="button"
+          className="btn"
+          onClick={onCopyToNextMonth}
+          disabled={isCopyingNextMonth || mutations.saveBudgets.isPending}
+        >
+          {isCopyingNextMonth ? 'Copiando...' : 'Copiar dados para próximo mês'}
+        </button>
       </div>
     </>
   )
