@@ -174,9 +174,7 @@ export default function MeusGastos() {
           <select className="account-filter-select" value={activeAccountTab} onChange={e => setActiveAccountTab(e.target.value)}>
             <option value="Todas">Todas as Contas</option>
             {accounts.map(acc => (
-              <option key={acc.id} value={acc.name}>
-                {acc.name} ({formatCurrency(totals.byAccount[acc.name] || 0)})
-              </option>
+              <option key={acc.id} value={acc.name}>{acc.name}</option>
             ))}
           </select>
         </div>
@@ -189,6 +187,7 @@ export default function MeusGastos() {
                 <th onClick={() => handleSort('description')} className="u-cursor-pointer">Gasto <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('amount')} className="u-text-right u-cursor-pointer">Valor <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('category')} className="u-cursor-pointer">Categoria <ArrowUpDown size={14} /></th>
+                <th>Conta</th>
                 <th className="col-actions u-text-right u-cursor-pointer" onClick={() => handleSort('createdat')} title="Clique para ordenar por data de insercao dos dados">Ações <ArrowUpDown size={14} /></th>
               </tr>
             </thead>
@@ -202,6 +201,7 @@ export default function MeusGastos() {
                   </td>
                   <td className="u-text-right">{formatCurrency(t.amount)}</td>
                   <td><span className="badge">{t.category}</span></td>
+                  <td><span className="badge">{t.account}</span></td>
                   <td className="col-actions u-text-right">
                     <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
                   </td>

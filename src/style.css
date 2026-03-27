@@ -751,6 +751,17 @@ tbody tr:hover {
   margin-bottom: 2rem;
 }
 
+.settings-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .planned-match-box {
   border: 1px solid #e2e8f0;
   border-radius: 0.6rem;

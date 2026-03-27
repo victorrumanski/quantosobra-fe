@@ -122,9 +122,7 @@ export default function Receitas() {
           >
             <option value="Todas">Todas as Contas</option>
             {accounts.map(a => (
-              <option key={a.id} value={a.name}>
-                {a.name} ({formatCurrency(totals.byAccount[a.name] || 0)})
-              </option>
+              <option key={a.id} value={a.name}>{a.name}</option>
             ))}
           </select>
         </div>
