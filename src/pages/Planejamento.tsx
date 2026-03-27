@@ -11,8 +11,8 @@ export default function Planejamento() {
   const { categories, budgets, transactions, mutations } = useFinanceData(month, session?.user?.id)
   const [itemsByCategory, setItemsByCategory] = useState<Record<string, Array<{ id: string; name: string; amount: string }>>>({})
   const [isCopyingNextMonth, setIsCopyingNextMonth] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-  const [sortMode, setSortMode] = useState<'name' | 'value'>('name')
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
+  const [sortMode, setSortMode] = useState<'name' | 'value'>('value')
 
   useEffect(() => {
     const map: Record<string, Array<{ id: string; name: string; amount: string }>> = {}
