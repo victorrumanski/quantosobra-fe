@@ -736,6 +736,122 @@ tbody tr:hover {
   justify-content: flex-start;
 }
 
+.budget-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.budget-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--panel);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.2rem;
+}
+
+.budget-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.35rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.budget-view-btn:hover {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+.budget-view-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.budget-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.budget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.budget-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.budget-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.budget-table tr:last-child td {
+  border-bottom: none;
+}
+
+.budget-table-cat-cell {
+  border-right: 1px solid #e2e8f0;
+  min-width: 140px;
+  vertical-align: top;
+  padding-top: 0.65rem !important;
+}
+
+.budget-table-group-start td {
+  border-top: 2px solid #e2e8f0;
+}
+
+.budget-table tbody tr:first-child td {
+  border-top: none;
+}
+
+.budget-table-cat-name {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.budget-table-cat-total {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.budget-table-value-cell {
+  text-align: right;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+  min-width: 90px;
+}
+
+.budget-table-value-th {
+  text-align: right;
+}
+
 .settings-row-card {
   display: flex;
   justify-content: space-between;
