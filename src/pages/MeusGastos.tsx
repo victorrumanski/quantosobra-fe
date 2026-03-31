@@ -170,7 +170,7 @@ export default function MeusGastos() {
 
       <section className="panel">
         <div className="account-filter-row u-mb-lg">
-          <span className="account-filter-label">Total de gastos: {formatCurrency(totals.total)}</span>
+          <span className="account-filter-label">Total de gastos: {formatCurrency(activeAccountTab === 'Todas' ? totals.total : (totals.byAccount[activeAccountTab] || 0))}</span>
           <select className="account-filter-select" value={activeAccountTab} onChange={e => setActiveAccountTab(e.target.value)}>
             <option value="Todas">Todas as Contas</option>
             {accounts.map(acc => (
