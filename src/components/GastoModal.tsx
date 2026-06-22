@@ -11,6 +11,7 @@ export type GastoFormState = {
   acc: string
   amt: string
   plannedItemId: string
+  expected: boolean
 }
 
 type GastoModalProps = {
@@ -60,11 +61,11 @@ export default function GastoModal({
         </div>
         <div className="modal-body">
           <form onSubmit={onSubmit} className="form-col">
-            <label>Conta <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
-            <label>Dia <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
-            <label>Nome <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
-            <label>Valor <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
-            <label>Categoria <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value, plannedItemId: '' })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
+            <label><span>Conta</span> <select value={form.acc} onChange={e => setForm({ ...form, acc: e.target.value })}>{accounts.map(a => <option key={a.id}>{a.name}</option>)}</select></label>
+            <label><span>Dia</span> <input type="number" min="1" max="31" value={form.day} onChange={e => setForm({ ...form, day: e.target.value.padStart(2, '0') })} required /></label>
+            <label><span>Nome</span> <input type="text" placeholder="Origem do gasto" value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })} required /></label>
+            <label><span>Valor</span> <input type="text" placeholder="0,00" value={form.amt} onChange={e => setForm({ ...form, amt: e.target.value })} required /></label>
+            <label><span>Categoria</span> <select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value, plannedItemId: '' })}>{categories.map(c => <option key={c.id}>{c.name}</option>)}</select></label>
             {plannedItems.length > 0 && (
               <div className="planned-match-box">
                 <div className="u-text-sm u-text-muted">Vincular com item planejado (opcional)</div>
@@ -97,7 +98,30 @@ export default function GastoModal({
                 </div>
               </div>
             )}
-            <label>Detalhes <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+            <label><span>Detalhes</span> <input type="text" placeholder="Opcional" value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} /></label>
+            <div className="radio-row">
+              <span>Esperado</span>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="expected"
+                  value="true"
+                  checked={form.expected === true}
+                  onChange={() => setForm({ ...form, expected: true })}
+                />
+                SIM
+              </label>
+              <label className="radio-label">
+                <input
+                  type="radio"
+                  name="expected"
+                  value="false"
+                  checked={form.expected === false}
+                  onChange={() => setForm({ ...form, expected: false })}
+                />
+                NÃO
+              </label>
+            </div>
             <div className="form-actions-row">
               <button type="submit" className="btn form-main-action-btn">{editingId ? 'Salvar Alterações' : 'Confirmar Gasto'}</button>
               {!editingId && allowConfirmPlusOne && (

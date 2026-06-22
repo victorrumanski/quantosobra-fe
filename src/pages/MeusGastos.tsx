@@ -23,6 +23,7 @@ export default function MeusGastos() {
     acc: '',
     amt: '',
     plannedItemId: '',
+    expected: true,
   })
 
   const plannedItemsByCategory = useMemo(() => {
@@ -100,6 +101,7 @@ export default function MeusGastos() {
       account_id: accounts.find(a => a.name === form.acc)?.id,
       category_id: categories.find(c => c.name === form.cat)?.id,
       planned_item_id: form.plannedItemId || null,
+      expected: form.expected,
     }
 
     let res
@@ -129,6 +131,7 @@ export default function MeusGastos() {
       acc: t.account,
       amt: Math.abs(t.amount).toString().replace('.', ','),
       plannedItemId: t.planned_item_id || '',
+      expected: t.expected !== false,
     })
     setIsModalOpen(true)
   }
@@ -143,6 +146,7 @@ export default function MeusGastos() {
       details: '',
       amt: '',
       plannedItemId: '',
+      expected: true,
     })
     setIsModalOpen(true)
   }
@@ -183,18 +187,20 @@ export default function MeusGastos() {
           <table>
             <thead>
               <tr>
-                <th onClick={() => handleSort('transaction_date')} className="u-cursor-pointer">Data <ArrowUpDown size={14} /></th>
+                <th className="col-actions u-text-right u-cursor-pointer" onClick={() => handleSort('createdat')} title="Clique para ordenar por data de insercao dos dados"> <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('description')} className="u-cursor-pointer">Gasto <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('amount')} className="u-text-right u-cursor-pointer">Valor <ArrowUpDown size={14} /></th>
                 <th onClick={() => handleSort('category')} className="u-cursor-pointer">Categoria <ArrowUpDown size={14} /></th>
                 <th>Conta</th>
-                <th className="col-actions u-text-right u-cursor-pointer" onClick={() => handleSort('createdat')} title="Clique para ordenar por data de insercao dos dados">Ações <ArrowUpDown size={14} /></th>
+                <th onClick={() => handleSort('transaction_date')} className="u-cursor-pointer">Data <ArrowUpDown size={14} /></th>
               </tr>
             </thead>
             <tbody>
               {filteredData.map(t => (
                 <tr key={t.id} className={highlightedId === t.id ? 'row-highlight' : ''}>
-                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
+                  <td className="col-actions u-text-right">
+                    <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
+                  </td>
                   <td>
                     <strong>{t.description}</strong>
                     {t.details && <div className="u-text-sm u-text-muted">{t.details}</div>}
@@ -202,9 +208,7 @@ export default function MeusGastos() {
                   <td className="u-text-right">{formatCurrency(t.amount)}</td>
                   <td><span className="badge">{t.category}</span></td>
                   <td><span className="badge">{t.account}</span></td>
-                  <td className="col-actions u-text-right">
-                    <button onClick={() => onEdit(t)} className="btn small"><Pencil size={14} /></button>
-                  </td>
+                  <td>{new Date(t.transaction_date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
                 </tr>
               ))}
             </tbody>

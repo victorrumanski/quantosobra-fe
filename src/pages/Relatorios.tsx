@@ -26,6 +26,7 @@ export default function Relatorios() {
     acc: '',
     amt: '',
     plannedItemId: '',
+    expected: true,
   })
 
   const plannedItemsByCategory = useMemo(() => {
@@ -111,6 +112,7 @@ export default function Relatorios() {
       acc: t.account,
       amt: Math.abs(t.amount).toString().replace('.', ','),
       plannedItemId: t.planned_item_id || '',
+      expected: t.expected !== false,
     })
     setIsModalOpen(true)
   }
@@ -137,6 +139,7 @@ export default function Relatorios() {
       account_id: accounts.find(a => a.name === form.acc)?.id,
       category_id: categories.find(c => c.name === form.cat)?.id,
       planned_item_id: form.plannedItemId || null,
+      expected: form.expected,
     }
 
     await mutations.updateTx.mutateAsync({ id: editingId, payload })

@@ -23,6 +23,7 @@ export interface Transaction {
   account_id?: string
   category_id?: string
   planned_item_id?: string | null
+  expected?: boolean
 }
 
 export interface PlannedBudgetItem {
@@ -93,6 +94,7 @@ export const financeService = {
       description: t.description || '',
       details: t.details || '',
       amount: Math.abs(Number(t.amount)),
+      expected: t.expected !== false,
       type: Number(t.amount) >= 0 ? TransactionType.RECEITA : TransactionType.DESPESA,
       account: t.accounts?.name || '',
       category: t.categories?.name || '',
