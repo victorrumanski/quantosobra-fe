@@ -15,6 +15,7 @@ export default function Relatorios() {
   const { accounts, categories, transactions, budgets, mutations } = useFinanceData(month, session?.user?.id)
   const [expandedCats, setExpandedCats] = useState<string[]>([])
   const [accountFilter, setAccountFilter] = useState('Todas')
+  const [expectedFilter, setExpectedFilter] = useState<'indiferente' | 'esperados' | 'nao'>('indiferente')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingInsertedAt, setEditingInsertedAt] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -57,14 +58,22 @@ export default function Relatorios() {
   }, [accounts, accountFilter])
 
   const filteredTxs = useMemo(() => {
-    if (accountFilter === 'Todas') return transactions
-    return transactions.filter(t => {
-      if (selectedAccountId && t.account_id) {
-        return t.account_id === selectedAccountId
-      }
-      return t.account === accountFilter
-    })
-  }, [transactions, accountFilter, selectedAccountId])
+    let list = transactions
+    if (accountFilter !== 'Todas') {
+      list = list.filter(t => {
+        if (selectedAccountId && t.account_id) {
+          return t.account_id === selectedAccountId
+        }
+        return t.account === accountFilter
+      })
+    }
+    if (expectedFilter === 'esperados') {
+      list = list.filter(t => (t.expected !== false))
+    } else if (expectedFilter === 'nao') {
+      list = list.filter(t => (t.expected === false))
+    }
+    return list
+  }, [transactions, accountFilter, selectedAccountId, expectedFilter])
 
   const monthDespesas = useMemo(() => filteredTxs.filter(t => t.type === TransactionType.DESPESA), [filteredTxs])
   const totalReceita = useMemo(() => filteredTxs.filter(t => t.type === TransactionType.RECEITA).reduce((a, b) => a + b.amount, 0), [filteredTxs])
@@ -197,6 +206,13 @@ export default function Relatorios() {
           <option value="Todas">Todas as Contas</option>
           {accounts.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
         </select>
+        <div style={{ marginTop: 8 }}>
+          <select className="account-filter-select" value={expectedFilter} onChange={e => setExpectedFilter(e.target.value as any)}>
+            <option value="indiferente">Todos os Gastos</option>
+            <option value="esperados">Somente Gastos Esperados</option>
+            <option value="nao">Somente Gastos Inesperados</option>
+          </select>
+        </div>
       </div>
 
       <div className="summary-single-wrap">
